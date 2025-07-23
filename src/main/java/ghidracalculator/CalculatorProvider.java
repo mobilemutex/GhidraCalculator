@@ -97,16 +97,16 @@ public class CalculatorProvider extends ComponentProvider {
 		clearAction.setToolBarData(new ToolBarData(ResourceManager.loadImage("images/erase16.png"), null));
 		addLocalAction(clearAction);
 
-		// History window toggle action
-		DockingAction historyAction = new DockingAction("Toggle History Window", plugin.getName()) {
-			@Override
-			public void actionPerformed(docking.ActionContext context) {
-				plugin.getHistoryProvider().toggleHistoryWindow();
-			}
-		};
-		historyAction.setDescription("Show/Hide calculator history window");
-		historyAction.setToolBarData(new ToolBarData(ResourceManager.loadImage("images/history.png"), null));
-		addLocalAction(historyAction);
+		// History window toggle action Not working, maybe ghidra doesnt allow toggling other providers?
+		// DockingAction historyAction = new DockingAction("Toggle History Window", plugin.getName()) {
+		// 	@Override
+		// 	public void actionPerformed(docking.ActionContext context) {
+		// 		plugin.getHistoryProvider().toggleHistoryWindow();
+		// 	}
+		// };
+		// historyAction.setDescription("Show/Hide calculator history window");
+		// historyAction.setToolBarData(new ToolBarData(ResourceManager.loadImage("images/history.png"), null));
+		// addLocalAction(historyAction);
 	}
 
 	/**
@@ -427,6 +427,7 @@ public class CalculatorProvider extends ComponentProvider {
 
 	/**
 	 * Append a digit to the current number
+	 * TODO: Allow for using the current theme for colors
 	 */
 	private void appendDigit(String digit) {
 		if (newNumber) {
@@ -486,6 +487,8 @@ public class CalculatorProvider extends ComponentProvider {
 	 */
 	private void performEquals() {
 		if (currentOperation.isEmpty()) {
+			String operationString = "";
+			plugin.getHistoryProvider().addToHistory(currentValue, operationString);
 			return;
 		}
 		
@@ -548,8 +551,14 @@ public class CalculatorProvider extends ComponentProvider {
 	 * Increment the current value by the specified amount
 	 */
 	private void increment(BigInteger amount) {
+		BigInteger previousValue = currentValue;
 		currentValue = currentValue.add(amount);
 		newNumber = true;
+
+		String operationString = String.format("%s + %s", 
+			previousValue.toString(16).toUpperCase(),
+			amount.toString(16).toUpperCase());
+		plugin.getHistoryProvider().addToHistory(currentValue, operationString);
 		updateDisplay();
 	}
 
@@ -557,10 +566,15 @@ public class CalculatorProvider extends ComponentProvider {
 	 * Perform bitwise NOT operation
 	 */
 	private void bitwiseNot() {
+		BigInteger previousValue = currentValue;
 		// For display purposes, limit to 32-bit NOT
 		long mask = 0xFFFFFFFFL;
 		currentValue = BigInteger.valueOf((~currentValue.longValue()) & mask);
 		newNumber = true;
+
+		String operationString = String.format("NOT %s", 
+			previousValue.toString(16).toUpperCase());
+		plugin.getHistoryProvider().addToHistory(currentValue, operationString);
 		updateDisplay();
 	}
 
@@ -628,9 +642,14 @@ public class CalculatorProvider extends ComponentProvider {
 				"Distance: 0x%X (%d bytes)",
 				markedAddress, currentAddress, distance, distance
 			);
+
+			String operationString = String.format("%s - %s", 
+				BigInteger.valueOf(currentAddress).toString(16).toUpperCase(),
+				BigInteger.valueOf(markedAddress).toString(16).toUpperCase());
+			plugin.getHistoryProvider().addToHistory(currentValue, operationString);
 			ConsoleService consoleService = this.plugin.getTool().getService(ConsoleService.class);
 			consoleService.println(message);
-			JOptionPane.showMessageDialog(getComponent(), message, "Address Distance", JOptionPane.INFORMATION_MESSAGE);
+			//JOptionPane.showMessageDialog(getComponent(), message, "Address Distance", JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
 
@@ -676,6 +695,13 @@ public class CalculatorProvider extends ComponentProvider {
 			currentValue = result;
 			newNumber = true;
 			updateDisplay();
+
+			// Add to history
+			String operationString = String.format("%s %s %s", 
+				markedValue.toString(16).toUpperCase(),
+				operationSymbol,
+				currentMemValue.toString(16).toUpperCase());
+			plugin.getHistoryProvider().addToHistory(currentValue, operationString);
 			
 			// Show detailed operation information
 			String message = String.format(
@@ -692,7 +718,7 @@ public class CalculatorProvider extends ComponentProvider {
 			);
 			ConsoleService consoleService = this.plugin.getTool().getService(ConsoleService.class);
 			consoleService.println(message);
-			JOptionPane.showMessageDialog(getComponent(), message, "Value Operation Result", JOptionPane.INFORMATION_MESSAGE);
+			//JOptionPane.showMessageDialog(getComponent(), message, "Value Operation Result", JOptionPane.INFORMATION_MESSAGE);
 		}
 	}
 
@@ -947,3 +973,4 @@ public class CalculatorProvider extends ComponentProvider {
 		}
 	}
 }
+
