@@ -3,7 +3,7 @@
 A calculator plugin for Ghidra
 
 
-![](screenshots/ghidraCalcMainScreenshot.PNG =310x463)
+![](screenshots/ghidraCalcMainScreenshot.PNG)
 
 
 ## Features
