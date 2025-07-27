@@ -99,6 +99,7 @@ public class CalculatorProvider extends ComponentProvider {
 			@Override
 			public void actionPerformed(docking.ActionContext context) {
 				clearCalculator();
+				clearMark();
 			}
 		};
 		clearAction.setDescription("Clear the calculator");
@@ -311,44 +312,50 @@ public class CalculatorProvider extends ComponentProvider {
 	 * Create the main button panel with calculator operations
 	 */
 	private JPanel createButtonPanel() {
-		JPanel panel = new JPanel(new GridLayout(6, 4, 2, 2));
+		JPanel panel = new JPanel(new GridLayout(7, 4, 3, 3));
 		panel.setBorder(BorderFactory.createTitledBorder("Operations"));
 		
 		// Row 1: Clear, Mark, Recall, and special operations
-		panel.add(createButton("C", e -> clearCalculator()));
 		panel.add(createButton("Mark", e -> markCurrentValue()));
 		panel.add(createButton("Recall", e -> recallMarkedValue()));
-		panel.add(createButton("=", e -> performEquals()));
+		panel.add(new JLabel());
+		panel.add(new JLabel());
 		
 		// Row 2: Hex digits and operations
 		panel.add(createButton("A", e -> appendDigit("A")));
 		panel.add(createButton("B", e -> appendDigit("B")));
 		panel.add(createButton("C", e -> appendDigit("C")));
-		panel.add(createButton("/", e -> setOperation("/")));
+		panel.add(createButton("CLR", e -> clearCalculator()));
 		
 		// Row 3: Hex digits and operations  
 		panel.add(createButton("D", e -> appendDigit("D")));
 		panel.add(createButton("E", e -> appendDigit("E")));
 		panel.add(createButton("F", e -> appendDigit("F")));
-		panel.add(createButton("*", e -> setOperation("*")));
+		panel.add(createButton("/", e -> setOperation("/")));
 		
 		// Row 4: Numbers and operations
 		panel.add(createButton("7", e -> appendDigit("7")));
 		panel.add(createButton("8", e -> appendDigit("8")));
 		panel.add(createButton("9", e -> appendDigit("9")));
-		panel.add(createButton("-", e -> setOperation("-")));
+		panel.add(createButton("*", e -> setOperation("*")));
 		
 		// Row 5: Numbers and operations
 		panel.add(createButton("4", e -> appendDigit("4")));
 		panel.add(createButton("5", e -> appendDigit("5")));
 		panel.add(createButton("6", e -> appendDigit("6")));
-		panel.add(createButton("+", e -> setOperation("+")));
+		panel.add(createButton("-", e -> setOperation("-")));
 		
 		// Row 6: Numbers and operations
 		panel.add(createButton("1", e -> appendDigit("1")));
 		panel.add(createButton("2", e -> appendDigit("2")));
 		panel.add(createButton("3", e -> appendDigit("3")));
+		panel.add(createButton("+", e -> setOperation("+")));
+
+		// Row 7
+		panel.add(createButton("+/-", e -> flipSign()));
 		panel.add(createButton("0", e -> appendDigit("0")));
+		panel.add(new JLabel());
+		panel.add(createButton("=", e -> performEquals()));
 		
 		return panel;
 	}
@@ -397,18 +404,26 @@ public class CalculatorProvider extends ComponentProvider {
 	protected void updateDisplay() {
 		// Update main display field based on input mode
 		String displayText;
+		String sign;
+
+		if (currentValue.signum() == -1) {
+			sign = "-";
+		} else {
+			sign = "";
+		}
+
 		switch (inputMode) {
 			case "HEX":
-				displayText = "0x" + currentValue.toString(16).toUpperCase();
+				displayText = sign + "0x" + currentValue.abs().toString(16).toUpperCase();
 				break;
 			case "DEC":
 				displayText = currentValue.toString(10);
 				break;
 			case "BIN":
-				displayText = "0b" + currentValue.toString(2);
+				displayText = sign + "0b" + currentValue.abs().toString(2);
 				break;
 			case "OCT":
-				displayText = "0" + currentValue.toString(8);
+				displayText = sign + "0" + currentValue.abs().toString(8);
 				break;
 			default:
 				displayText = currentValue.toString(16).toUpperCase();
@@ -416,10 +431,10 @@ public class CalculatorProvider extends ComponentProvider {
 		displayField.setText(displayText);
 		
 		// Update multi-base labels
-		hexLabel.setText("0x" + currentValue.toString(16).toUpperCase());
+		hexLabel.setText(sign + "0x" + currentValue.abs().toString(16).toUpperCase());
 		decLabel.setText(currentValue.toString(10));
-		binLabel.setText("0b" + currentValue.toString(2));
-		octLabel.setText("0" + currentValue.toString(8));
+		binLabel.setText(sign + "0b" + currentValue.abs().toString(2));
+		octLabel.setText(sign + "0" + currentValue.abs().toString(8));
 
 		// Update address validation info in tooltip
 		String addressInfo = getAddressInfo(currentValue);
@@ -545,6 +560,14 @@ public class CalculatorProvider extends ComponentProvider {
 	}
 
 	/**
+	 * Flip sign of current value
+	 */
+	private void flipSign() {
+		currentValue = currentValue.negate();
+		updateDisplay();
+	}
+
+	/**
 	 * Clear the calculator
 	 */
 	private void clearCalculator() {
@@ -552,7 +575,6 @@ public class CalculatorProvider extends ComponentProvider {
 		previousValue = BigInteger.ZERO;
 		currentOperation = "";
 		newNumber = true;
-		clearMark();
 		updateDisplay();
 	}
 
@@ -592,7 +614,14 @@ public class CalculatorProvider extends ComponentProvider {
 	 */
 	private void markCurrentValue() {
 		markedValue = currentValue;
-		markedValueLabel.setText("Marked Value: " + markedValue.toString(16).toUpperCase() + "h");
+		String sign;
+		if (markedValue.signum() == -1) {
+			sign = "-";
+		} else {
+			sign = "";
+		}
+
+		markedValueLabel.setText("Marked Value: " + sign + "0x" + markedValue.abs().toString(16).toUpperCase());
 	}
 
 	/**
@@ -667,7 +696,15 @@ public class CalculatorProvider extends ComponentProvider {
 	 */
 	public void markValueForComparison(BigInteger value) {
 		markedValue = value;
-		markedValueLabel.setText("Marked Value: 0x" + value.toString(16).toUpperCase());
+		String sign;
+
+		if (markedValue.signum() == -1) {
+			sign = "-";
+		} else {
+			sign = "";
+		}
+
+		markedValueLabel.setText("Marked Value: " + sign + "0x" + markedValue.abs().toString(16).toUpperCase());
 	}
 
 	/**
