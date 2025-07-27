@@ -40,4 +40,5 @@ task distributeExtension {
 buildExtension.exclude '.gradle/**'
 buildExtension.exclude 'build/**'
 buildExtension.exclude '.git/**'
+buildExtension.exclude 'gradle.properties'
 
