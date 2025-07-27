@@ -82,6 +82,14 @@ public class CalculatorProvider extends ComponentProvider {
 		return mainPanel;
 	}
 
+	public long getMarkedAddress() {
+		return markedAddress;
+	}
+
+	public BigInteger getMarkedValue() {
+		return markedValue;
+	}
+
 	/**
 	 * Create toolbar actions for the calculator
 	 */
@@ -544,6 +552,7 @@ public class CalculatorProvider extends ComponentProvider {
 		previousValue = BigInteger.ZERO;
 		currentOperation = "";
 		newNumber = true;
+		clearMark();
 		updateDisplay();
 	}
 
@@ -725,12 +734,12 @@ public class CalculatorProvider extends ComponentProvider {
 	/**
 	 * Clear marked values and addresses
 	 */
-	// private void clearMark() {
-	// 	markedValue = null;
-	// 	markedAddress = -1;
-	// 	markedValueLabel.setText("Marked Value: None");
-	// 	markedAddressLabel.setText("Marked Address: None");
-	// }
+	private void clearMark() {
+		markedValue = null;
+		markedAddress = -1;
+		markedValueLabel.setText("Marked Value: None");
+		markedAddressLabel.setText("Marked Address: None");
+	}
 
 	/**
 	 * Handle keyboard input for calculator operations
