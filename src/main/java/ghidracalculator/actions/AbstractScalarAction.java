@@ -27,6 +27,7 @@ public abstract class AbstractScalarAction extends ListingContextAction {
 
     @Override
     public boolean isEnabledForContext(ListingActionContext context) {
+        // If the action is for a marked operation, ensure there is a previously marked value
         if (isMarkedOperation && plugin.getProvider().hasMarkedValue() == false) {
             return false;
         }
@@ -49,19 +50,26 @@ public abstract class AbstractScalarAction extends ListingContextAction {
         int operandIndex = operandLoc.getOperandIndex();
         int subOperandIndex = operandLoc.getSubOperandIndex();
 
+        // Check if the current location's type is Data
         if (codeUnit instanceof Data) {
             scalarOp = codeUnit.getScalar(operandIndex);
 
-            String menuName = getMenuName(context.getProgram(), scalarOp);
-            getPopupMenuData().setMenuItemNamePlain(menuName);
+            if (scalarOp != null) {
+                String menuName = getMenuName(context.getProgram(), scalarOp);
+                getPopupMenuData().setMenuItemNamePlain(menuName);
 
-            return true;
+                return true;
+            }
+
+            return false;
         }
 
+        // If we have a negative subOperandIndex at this point, there probably isn't a scalar
         if (subOperandIndex < 0) {
             return false;
         }
 
+        // Get the list of operands at the current location
         Instruction instruction = (Instruction) codeUnit;
         List<?> opList = instruction.getDefaultOperandRepresentationList(operandIndex);
         if (opList == null) {
@@ -79,6 +87,7 @@ public abstract class AbstractScalarAction extends ListingContextAction {
 				break;
 			}
 		}
+        // Check from opIndex to Beginning for scalar
 		if (currentScalar == null) {
 			for (int repIndex = subOperandIndex - 1; repIndex >= 0; repIndex--) {
 				Object object = opList.get(repIndex);
@@ -88,6 +97,7 @@ public abstract class AbstractScalarAction extends ListingContextAction {
 				}
 			}
 		}
+        // If we didn't find a scalar, don't enable the action
 		if (currentScalar == null) {
 			return false;
 		}
@@ -105,6 +115,7 @@ public abstract class AbstractScalarAction extends ListingContextAction {
             return false;
         }
 
+        // Set the menu name and return true
         String menuName = getMenuName(context.getProgram(), scalarOp);
         getPopupMenuData().setMenuItemNamePlain(menuName);
 
