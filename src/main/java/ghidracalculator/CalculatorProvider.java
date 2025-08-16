@@ -312,6 +312,93 @@ public class CalculatorProvider extends ComponentProvider {
 	 * Create the main button panel with calculator operations
 	 */
 	private JPanel createButtonPanel() {
+		JPanel buttonPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(2, 2, 2, 2);
+        gbc.fill = GridBagConstraints.BOTH;
+        
+        // Main buttons (0-9, A-F, Basic Operations)
+        String[] numbers = {"D", "E", "F",
+							"A", "B", "C",
+							"7", "8", "9",
+							"4", "5", "6",
+						    "1", "2", "3",};
+		String[] operators = {"CLR", "/", "*", "-", "+"};
+		String[] lastRow = {"+/-", "0", "", "="};
+        int row = 0, col = 0;
+        
+		for (int i = 0; i < 20; i++) {
+			if (col == 3) {
+				JButton btn = new JButton(operators[row]);
+				btn.addActionListener(e -> performAction);
+			}
+			JButton btn = new JButton(
+		}
+
+        for (String num : numbers) {
+            JButton btn = new JButton(num);
+            btn.addActionListener(e -> appendDigit(num));
+            gbc.gridx = col;
+            gbc.gridy = row;
+            buttonPanel.add(btn, gbc);
+            
+            col++;
+            if (col > 3) {
+                col = 0;
+                row++;
+            }
+        }
+        
+        // Operation buttons
+        row++;
+        String[] operations = {"+", "-", "*", "/", "&", "|", "^", "~", "<<", ">>", "=", "C"};
+        col = 0;
+        
+        for (String op : operations) {
+            JButton btn = new JButton(op);
+            btn.addActionListener(e -> performOperation(op));
+            if (settings.getBoolean("interface.show_tooltips")) {
+                btn.setToolTipText(getOperationTooltip(op));
+            }
+            gbc.gridx = col;
+            gbc.gridy = row;
+            buttonPanel.add(btn, gbc);
+            
+            col++;
+            if (col > 3) {
+                col = 0;
+                row++;
+            }
+        }
+        
+        // Quick increment/decrement buttons
+        row++;
+        String[] increments = {"+1", "+0x10", "+0x100", "+0x1000", "-1", "-0x10", "-0x100", "-0x1000"};
+        col = 0;
+        
+        for (String inc : increments) {
+            JButton btn = new JButton(inc);
+            btn.addActionListener(e -> performIncrement(inc));
+            if (settings.getBoolean("interface.show_tooltips")) {
+                btn.setToolTipText("Increment/decrement by " + inc);
+            }
+            gbc.gridx = col;
+            gbc.gridy = row;
+            buttonPanel.add(btn, gbc);
+            
+            col++;
+            if (col > 3) {
+                col = 0;
+                row++;
+            }
+        }
+        
+        return buttonPanel;
+
+
+
+
+
 		JPanel panel = new JPanel(new GridLayout(7, 4, 3, 3));
 		panel.setBorder(BorderFactory.createTitledBorder("Operations"));
 		

@@ -21,7 +21,7 @@ public class AddScalarAction extends AbstractScalarAction {
 
     @Override
     protected String getMenuName(Program program, Scalar scalar) {
-        return "Add Scalar to Calculator: " + scalarOp.toString();
+        return "Add Scalar to Calculator: " + scalar.toString();
     }
 
 }

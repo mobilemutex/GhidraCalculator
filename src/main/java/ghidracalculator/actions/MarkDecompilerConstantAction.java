@@ -7,20 +7,20 @@ import ghidra.program.model.listing.Program;
 import ghidra.program.model.scalar.Scalar;
 import ghidracalculator.CalculatorPlugin;
 
-public class AddDecompilerConstantAction extends AbstractDecompilerConstantAction {
+public class MarkDecompilerConstantAction extends AbstractDecompilerConstantAction {
 
-    public AddDecompilerConstantAction(CalculatorPlugin plugin) {
-        super(plugin, "Add Constant to Calculator");
+    public MarkDecompilerConstantAction(CalculatorPlugin plugin) {
+        super(plugin, "Mark Decompiler Constant Value");
     }
-
+    
     @Override
     protected void decompilerActionPerformed(DecompilerActionContext context) {
         BigInteger value = BigInteger.valueOf(constant.getValue());
-        plugin.getProvider().addValue(value);
+        plugin.getProvider().markValueForComparison(value);
     }
     
     @Override
     protected String getMenuName(Program program, Scalar constant) {
-        return "Add Constant to Calculator: " + constant.toString();
+        return "Mark Constant Value: " + constant.toString();
     }
 }

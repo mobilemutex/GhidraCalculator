@@ -11,6 +11,7 @@ import ghidracalculator.actions.AddDecompilerConstantAction;
 import ghidracalculator.actions.AddMemoryAction;
 import ghidracalculator.actions.CalculateDistanceAction;
 import ghidracalculator.actions.MarkAddressAction;
+import ghidracalculator.actions.MarkDecompilerConstantAction;
 import ghidracalculator.actions.MarkScalarAction;
 import ghidracalculator.actions.AddScalarAction;
 import ghidracalculator.actions.PerformMarkedScalarOperationAction;
@@ -45,6 +46,7 @@ public class CalculatorPlugin extends ProgramPlugin {
 	private DockingAction subtractFromMarkedScalarAction;
 	private DockingAction xorWithMarkedScalarAction;
 	private DockingAction addDecompilerConstant;
+	private DockingAction markDecompilerConstant;
 
 	/**
 	 * Plugin constructor.
@@ -81,11 +83,12 @@ public class CalculatorPlugin extends ProgramPlugin {
 		markAddressAction = new MarkAddressAction(this, CALC_MARK);
 		calculateDistanceAction = new CalculateDistanceAction(this, CALC_ADDRESS);
 		addScalarAction = new AddScalarAction(this, "Add scalar operand to Calculator", CALC_ADD);
-		markScalarAction = new MarkScalarAction(this, "Mark scalar operand 0", CALC_MARK);
-		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand 0", "add", CALC_SCALAR);
-		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand 0", "subtract", CALC_SCALAR);
-		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand 0", "xor", CALC_SCALAR);
-		addDecompilerConstant = new AddDecompilerConstantAction(this, CALC_ADD);
+		markScalarAction = new MarkScalarAction(this, "Mark scalar operand", CALC_MARK);
+		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand", "add", CALC_SCALAR);
+		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand", "subtract", CALC_SCALAR);
+		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand", "xor", CALC_SCALAR);
+		addDecompilerConstant = new AddDecompilerConstantAction(this);
+		markDecompilerConstant = new MarkDecompilerConstantAction(this);
 
 		tool.addAction(addAddressAction);
 		tool.addAction(addMemoryValueAction);
@@ -97,6 +100,7 @@ public class CalculatorPlugin extends ProgramPlugin {
 		tool.addAction(subtractFromMarkedScalarAction);
 		tool.addAction(xorWithMarkedScalarAction);
 		tool.addAction(addDecompilerConstant);
+		tool.addAction(markDecompilerConstant);
 	}
 
 	/**
