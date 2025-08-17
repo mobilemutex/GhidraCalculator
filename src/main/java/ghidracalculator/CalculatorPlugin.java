@@ -7,9 +7,11 @@ import ghidra.framework.plugintool.PluginInfo;
 import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidracalculator.actions.AddAddressAction;
+import ghidracalculator.actions.AddDecompilerConstantAction;
 import ghidracalculator.actions.AddMemoryAction;
 import ghidracalculator.actions.CalculateDistanceAction;
 import ghidracalculator.actions.MarkAddressAction;
+import ghidracalculator.actions.MarkDecompilerConstantAction;
 import ghidracalculator.actions.MarkScalarAction;
 import ghidracalculator.actions.AddScalarAction;
 import ghidracalculator.actions.PerformMarkedScalarOperationAction;
@@ -29,26 +31,22 @@ public class CalculatorPlugin extends ProgramPlugin {
 	private CalculatorProvider provider;
 	protected HistoryProvider historyProvider;
 	final static String GROUP_NAME = "Calculator";
+	final static String CALC_ADD = "CalculatorAdd";
+	final static String CALC_MARK = "CalculatorMark";
+	final static String CALC_ADDRESS = "CalculatorAddress";
+	final static String CALC_SCALAR = "CalculatorScalar";
 
 	private DockingAction addAddressAction;
 	private DockingAction addMemoryValueAction;
 	private DockingAction markAddressAction;
 	private DockingAction calculateDistanceAction;
-	private DockingAction addScalarAction1;
-	private DockingAction addScalarAction2;
-	private DockingAction addScalarAction3;
-	private DockingAction markScalarAction1;
-	private DockingAction markScalarAction2;
-	private DockingAction markScalarAction3;
-	private DockingAction addToMarkedScalarAction1;
-	private DockingAction addToMarkedScalarAction2;
-	private DockingAction addToMarkedScalarAction3;
-	private DockingAction subtractFromMarkedScalarAction1;
-	private DockingAction subtractFromMarkedScalarAction2;
-	private DockingAction subtractFromMarkedScalarAction3;
-	private DockingAction xorWithMarkedScalarAction1;
-	private DockingAction xorWithMarkedScalarAction2;
-	private DockingAction xorWithMarkedScalarAction3;
+	private DockingAction addScalarAction;
+	private DockingAction markScalarAction;
+	private DockingAction addToMarkedScalarAction;
+	private DockingAction subtractFromMarkedScalarAction;
+	private DockingAction xorWithMarkedScalarAction;
+	private DockingAction addDecompilerConstant;
+	private DockingAction markDecompilerConstant;
 
 	/**
 	 * Plugin constructor.
@@ -80,48 +78,29 @@ public class CalculatorPlugin extends ProgramPlugin {
 	 * Create context menu actions for integration with Ghidra's listing windows
 	 */
 	private void createContextMenuActions() {
-		
-		addAddressAction = new AddAddressAction(this, "CalculatorAdd");
-		addMemoryValueAction = new AddMemoryAction(this, "CalculatorAdd");
-		markAddressAction = new MarkAddressAction(this, "CalculatorMark");
-		calculateDistanceAction = new CalculateDistanceAction(this, "CalculatorAddress");
-
-		// Hard-coding actions for up to 3 operands until I figure out a way to do this dynamically
-		addScalarAction1 = new AddScalarAction(this, "Add scalar operand 0 to Calculator", 0, "CalculatorAdd");
-		addScalarAction2 = new AddScalarAction(this, "Add scalar operand 1 to Calculator", 1, "CalculatorAdd");
-		addScalarAction3 = new AddScalarAction(this, "Add scalar operand 2 to Calculator", 2, "CalculatorAdd");
-		markScalarAction1 = new MarkScalarAction(this, "Mark scalar operand 0", 0, "CalculatorMark");
-		markScalarAction2 = new MarkScalarAction(this, "Mark scalar operand 1", 1, "CalculatorMark");
-		markScalarAction3 = new MarkScalarAction(this, "Mark scalar operand 2", 2, "CalculatorMark");
-		addToMarkedScalarAction1 = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand 0", "add", 0, "CalculatorScalar");
-		addToMarkedScalarAction2 = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand 1", "add", 1, "CalculatorScalar");
-		addToMarkedScalarAction3 = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand 2", "add", 2, "CalculatorScalar");
-		subtractFromMarkedScalarAction1 = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand 0", "subtract", 0, "CalculatorScalar");
-		subtractFromMarkedScalarAction2 = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand 1", "subtract", 1, "CalculatorScalar");
-		subtractFromMarkedScalarAction3 = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand 2", "subtract", 2, "CalculatorScalar");
-		xorWithMarkedScalarAction1 = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand 0", "xor", 0, "CalculatorScalar");
-		xorWithMarkedScalarAction2 = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand 1", "xor", 1, "CalculatorScalar");
-		xorWithMarkedScalarAction3 = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand 2", "xor", 2, "CalculatorScalar");
+		addAddressAction = new AddAddressAction(this, CALC_ADD);
+		addMemoryValueAction = new AddMemoryAction(this, CALC_ADD);
+		markAddressAction = new MarkAddressAction(this, CALC_MARK);
+		calculateDistanceAction = new CalculateDistanceAction(this, CALC_ADDRESS);
+		addScalarAction = new AddScalarAction(this, "Add scalar operand to Calculator", CALC_ADD);
+		markScalarAction = new MarkScalarAction(this, "Mark scalar operand", CALC_MARK);
+		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand", "add", CALC_SCALAR);
+		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand", "subtract", CALC_SCALAR);
+		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand", "xor", CALC_SCALAR);
+		addDecompilerConstant = new AddDecompilerConstantAction(this);
+		markDecompilerConstant = new MarkDecompilerConstantAction(this);
 
 		tool.addAction(addAddressAction);
 		tool.addAction(addMemoryValueAction);
 		tool.addAction(markAddressAction);
 		tool.addAction(calculateDistanceAction);
-		tool.addAction(addScalarAction1);
-		tool.addAction(addScalarAction2);
-		tool.addAction(addScalarAction3);
-		tool.addAction(markScalarAction1);
-		tool.addAction(markScalarAction2);
-		tool.addAction(markScalarAction3);
-		tool.addAction(addToMarkedScalarAction1);
-		tool.addAction(addToMarkedScalarAction2);
-		tool.addAction(addToMarkedScalarAction3);
-		tool.addAction(subtractFromMarkedScalarAction1);
-		tool.addAction(subtractFromMarkedScalarAction2);
-		tool.addAction(subtractFromMarkedScalarAction3);
-		tool.addAction(xorWithMarkedScalarAction1);
-		tool.addAction(xorWithMarkedScalarAction2);
-		tool.addAction(xorWithMarkedScalarAction3);
+		tool.addAction(addScalarAction);
+		tool.addAction(markScalarAction);
+		tool.addAction(addToMarkedScalarAction);
+		tool.addAction(subtractFromMarkedScalarAction);
+		tool.addAction(xorWithMarkedScalarAction);
+		tool.addAction(addDecompilerConstant);
+		tool.addAction(markDecompilerConstant);
 	}
 
 	/**

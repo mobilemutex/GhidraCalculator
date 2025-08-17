@@ -20,6 +20,8 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
 import docking.ComponentProvider;
+import ghidra.program.model.address.Address;
+import ghidra.program.model.address.AddressFactory;
 import ghidracalculator.resources.GhidraCalcIcons;
 
 public class HistoryProvider extends ComponentProvider{
@@ -81,7 +83,14 @@ public class HistoryProvider extends ComponentProvider{
 					int index = historyList.locationToIndex(e.getPoint());
 					if (index >= 0 && index < historyValues.size()) {
 						BigInteger value = historyValues.get(index);
-						plugin.getProvider().navigateToAddress(value);
+
+						// Only attempt to navigate to address if it's a valid address
+						AddressFactory addressFactory = plugin.getCurrentProgram().getAddressFactory();
+						Address address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+
+						if (plugin.getCurrentProgram().getMemory().contains(address)) {
+							plugin.getProvider().navigateToAddress(value);
+						}
 					}
 				}
 			}

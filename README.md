@@ -10,8 +10,8 @@ A calculator plugin for Ghidra
 
 - **Multi-base Display**: Simultaneous hex, decimal, binary, and octal display
 - **Input Mode Switching**: Switch between hex/dec/bin/oct input modes
-- **Standard Operations**: Addition, subtraction, multiplication, division
-- **Bitwise Operations**: AND, OR, XOR, NOT
+- **Standard Operations**: Addition, subtraction, multiplication, division, modulo
+- **Bitwise Operations**: AND, OR, XOR, NOT, NOR, Rotate, Shift
 - **Quick Increment/Decrement**: ±1, ±0x10, ±0x100, ±0x1000 buttons
 - **Value Marking**: Mark and recall values
 - **Real-time Conversion**: See values in all number bases simultaneously
@@ -25,6 +25,7 @@ A calculator plugin for Ghidra
   - Mark addresses for distance calculation
   - Mark values for comparison operations
   - Perform addition, subtraction, and xor'ing of marked values
+  - Add constants from right-click menu in Decompiler window
 
 ## Screenshots
 

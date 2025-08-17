@@ -127,7 +127,7 @@ public class CalculatorProvider extends ComponentProvider {
 		// Create display panel
 		JPanel displayPanel = createDisplayPanel();
 		mainPanel.add(displayPanel, BorderLayout.NORTH);
-		
+
 		// Create button panel
 		JPanel buttonPanel = createButtonPanel();
 		mainPanel.add(buttonPanel, BorderLayout.CENTER);
@@ -308,63 +308,136 @@ public class CalculatorProvider extends ComponentProvider {
 		return panel;
 	}
 
+	private JPanel createButtonPanel() {
+		JPanel buttonPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = new Insets(0, 2, 0, 2);
+        gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		gbc.weightx = .6;
+		gbc.weighty = 1;
+		gbc.gridwidth = 1;
+
+		JPanel operationsPanel = createOperationsPanel();
+		buttonPanel.add(operationsPanel, gbc);
+
+		gbc.gridx = 1;
+		gbc.weightx = 1;
+		gbc.insets = new Insets(0, 0, 0, 2);
+		JPanel basicPanel = createBasicPanel();
+		buttonPanel.add(basicPanel, gbc);
+		
+		return buttonPanel;
+	}
+
 	/**
 	 * Create the main button panel with calculator operations
 	 */
-	private JPanel createButtonPanel() {
-		JPanel panel = new JPanel(new GridLayout(7, 4, 3, 3));
-		panel.setBorder(BorderFactory.createTitledBorder("Operations"));
-		
-		// Row 1: Clear, Mark, Recall, and special operations
-		panel.add(createButton("Mark", e -> markCurrentValue()));
-		panel.add(createButton("Recall", e -> recallMarkedValue()));
-		panel.add(new JLabel());
-		panel.add(new JLabel());
-		
-		// Row 2: Hex digits and operations
-		panel.add(createButton("A", e -> appendDigit("A")));
-		panel.add(createButton("B", e -> appendDigit("B")));
-		panel.add(createButton("C", e -> appendDigit("C")));
-		panel.add(createButton("CLR", e -> clearCalculator()));
-		
-		// Row 3: Hex digits and operations  
-		panel.add(createButton("D", e -> appendDigit("D")));
-		panel.add(createButton("E", e -> appendDigit("E")));
-		panel.add(createButton("F", e -> appendDigit("F")));
-		panel.add(createButton("/", e -> setOperation("/")));
-		
-		// Row 4: Numbers and operations
-		panel.add(createButton("7", e -> appendDigit("7")));
-		panel.add(createButton("8", e -> appendDigit("8")));
-		panel.add(createButton("9", e -> appendDigit("9")));
-		panel.add(createButton("*", e -> setOperation("*")));
-		
-		// Row 5: Numbers and operations
-		panel.add(createButton("4", e -> appendDigit("4")));
-		panel.add(createButton("5", e -> appendDigit("5")));
-		panel.add(createButton("6", e -> appendDigit("6")));
-		panel.add(createButton("-", e -> setOperation("-")));
-		
-		// Row 6: Numbers and operations
-		panel.add(createButton("1", e -> appendDigit("1")));
-		panel.add(createButton("2", e -> appendDigit("2")));
-		panel.add(createButton("3", e -> appendDigit("3")));
-		panel.add(createButton("+", e -> setOperation("+")));
+	private JPanel createBasicPanel() {
+		JPanel basicPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(2, 2, 2, 2);
+        gbc.fill = GridBagConstraints.BOTH;
+        
+        // Main buttons (0-9, A-F, Basic Operations)
+        String[] numbers = {"D", "E", "F",
+							"A", "B", "C",
+							"7", "8", "9",
+							"4", "5", "6",
+						    "1", "2", "3",};
 
-		// Row 7
-		panel.add(createButton("+/-", e -> flipSign()));
-		panel.add(createButton("0", e -> appendDigit("0")));
-		panel.add(new JLabel());
-		panel.add(createButton("=", e -> performEquals()));
-		
-		return panel;
+		// Operator buttons - divide and multipy symbols in unicode
+		String[] operators = {"CLR", "\u00F7", "\u00D7", "-", "+"}; 
+		String[] lastRow = {"0", "="};
+        int row = 0, col = 0;
+		gbc.weightx = 1;
+		gbc.weighty = 1;
+		gbc.ipadx = 5;
+        
+		for (int i = 0; i < 20; i++) {
+			gbc.gridx = col;
+            gbc.gridy = row;
+			// Col 3 is the operators
+			if (col == 3) {
+				String op = operators[row];
+				JButton btn = new JButton(op);
+				btn.addActionListener(e -> performOperation(op));
+				btn.setMargin(new Insets(6, 6, 6, 6));
+				btn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+				basicPanel.add(btn, gbc);
+			} else {
+				String num = numbers[col + (row * 3)];
+				JButton btn = new JButton(num);
+				btn.addActionListener(e -> appendDigit(num));
+				basicPanel.add(btn, gbc);
+			}
+
+			col++;
+            if (col > 3) {
+                col = 0;
+                row++;
+            }
+		}
+		// Add the last two buttons (0 and =)
+		gbc.gridx = 1;
+		gbc.gridy = row;
+		String num = lastRow[0]; // 0
+		JButton btn = new JButton(num);
+		btn.addActionListener(e -> appendDigit(num));
+		basicPanel.add(btn, gbc);
+
+		gbc.gridx = 2;
+		gbc.gridwidth = 2;
+		String eq = lastRow[1]; // =
+		btn = new JButton(eq);
+		btn.addActionListener(e -> performOperation(eq));
+		basicPanel.add(btn, gbc);
+
+		return basicPanel;
+	}
+
+	private JPanel createOperationsPanel() {
+		JPanel operationsPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(2, 2, 2, 2);
+        gbc.fill = GridBagConstraints.BOTH;
+		gbc.weightx = 1;
+		gbc.weighty = 1;
+		int row = 0, col = 0;
+
+
+		String[] operators = {"AND", "OR", 
+							  "XOR", "NOT", 
+							  "NOR", "MOD", 
+							  "RoR", "RoL",
+							  "<<", ">>", 
+							  "+/-" };
+
+		for (String op : operators) {
+			JButton btn = new JButton(op);
+			btn.setMargin(new Insets(8, 6, 8, 6));
+			btn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+            btn.addActionListener(e -> performOperation(op));
+			gbc.gridx = col;
+			gbc.gridy = row;
+			operationsPanel.add(btn, gbc);
+
+			col++;
+            if (col > 1) {
+                col = 0;
+                row++;
+            }
+		}
+
+		return operationsPanel;
 	}
 
 	/**
 	 * Create the increment/decrement and bitwise operations panel
 	 */
 	private JPanel createIncrementPanel() {
-		JPanel panel = new JPanel(new GridLayout(3, 4, 2, 2));
+		JPanel panel = new JPanel(new GridLayout(2, 4, 2, 2));
 		panel.setBorder(BorderFactory.createTitledBorder("Quick Operations"));
 		
 		// Row 1: Increment operations
@@ -378,12 +451,6 @@ public class CalculatorProvider extends ComponentProvider {
 		panel.add(createButton("-0x10", e -> increment(BigInteger.valueOf(-0x10))));
 		panel.add(createButton("-0x100", e -> increment(BigInteger.valueOf(-0x100))));
 		panel.add(createButton("-0x1000", e -> increment(BigInteger.valueOf(-0x1000))));
-		
-		// Row 3: Bitwise operations
-		panel.add(createButton("AND", e -> setOperation("AND")));
-		panel.add(createButton("OR", e -> setOperation("OR")));
-		panel.add(createButton("XOR", e -> setOperation("XOR")));
-		panel.add(createButton("NOT", e -> bitwiseNot()));
 		
 		return panel;
 	}
@@ -505,6 +572,44 @@ public class CalculatorProvider extends ComponentProvider {
 		newNumber = true;
 	}
 
+	/** 
+	 * Perform operation for specified operator
+	 */
+	private void performOperation(String op) {
+		if (op != null) {
+			switch (op) {
+				case "\u00F7":
+				case "\u00D7":
+				case "-":
+				case "+":
+				case "AND":
+				case "OR":
+				case "XOR":
+				case "NOR":
+				case "MOD":
+				case "RoR":
+				case "RoL":
+				case "<<":
+				case ">>":
+					setOperation(op);
+					break;
+				case "NOT":
+					bitwiseNot();
+					break;
+				case "+/-":
+					flipSign();
+					break;
+				case "=":
+					performEquals();
+					break;
+				case "CLR":
+					clearCalculator();
+					break;
+			}
+		}
+		return;
+	}
+
 	/**
 	 * Perform the equals operation
 	 */
@@ -528,10 +633,10 @@ public class CalculatorProvider extends ComponentProvider {
 			case "-":
 				result = previousValue.subtract(currentValue);
 				break;
-			case "*":
+			case "\u00D7":
 				result = previousValue.multiply(currentValue);
 				break;
-			case "/":
+			case "\u00F7":
 				if (!currentValue.equals(BigInteger.ZERO)) {
 					result = previousValue.divide(currentValue);
 				} else {
@@ -547,6 +652,27 @@ public class CalculatorProvider extends ComponentProvider {
 				break;
 			case "XOR":
 				result = previousValue.xor(currentValue);
+				break;
+			case "NOR":
+				long mask = 0xFFFFFFFFL;  //Mask to 32 bits
+				result = BigInteger.valueOf((~previousValue.or(currentValue).longValue()) & mask);
+				break;
+			case "MOD":
+				result = previousValue.mod(currentValue);
+				break;
+			case "RoR": // 32-bit circular rotation
+				int rval = previousValue.intValue();
+				result = BigInteger.valueOf(Integer.rotateRight(rval, currentValue.intValue()));
+				break;
+			case "RoL":
+				int lval = previousValue.intValue();
+				result = BigInteger.valueOf(Integer.rotateLeft(lval, currentValue.intValue()));
+				break;
+			case "<<":
+				result = previousValue.shiftLeft(currentValue.intValue());
+				break;
+			case ">>":
+				result = previousValue.shiftRight(currentValue.intValue());
 				break;
 		}
 		
@@ -780,6 +906,9 @@ public class CalculatorProvider extends ComponentProvider {
 
 	/**
 	 * Handle keyboard input for calculator operations
+	 * TODO: This needs to be fixed so that enter doesn't need to be hit
+	 * 		 in order to update the currentvalue and the operator keys
+	 *       clear the display for the next number to be entered
 	 */
 	private void handleKeyPress(KeyEvent e) {
 		int keyCode = e.getKeyCode();
@@ -830,7 +959,7 @@ public class CalculatorProvider extends ComponentProvider {
 			bitwiseNot();
 			e.consume();
 		}
-		// For other characters, let the text field handle them normally
+		// For other characters, let the text field handle them normally (This is kind of broken and clunky)
 	}
 
 	/**
@@ -951,6 +1080,18 @@ public class CalculatorProvider extends ComponentProvider {
 		pasteItem.setToolTipText("Paste value from clipboard");
 		pasteItem.addActionListener(evt -> pasteValueFromClipboard());
 		popup.add(pasteItem);
+
+		// Mark Value option
+		JMenuItem markValueItem = new JMenuItem("Mark Value");
+		markValueItem.addActionListener(evt -> markCurrentValue());
+		popup.add(markValueItem);
+
+		// Recall Value option
+		if (hasMarkedValue()) {
+			JMenuItem recallValueItem = new JMenuItem("Recall Value");
+			recallValueItem.addActionListener(evt -> recallMarkedValue());
+			popup.add(recallValueItem);
+		}
 		
 		// Only show popup if it has items
 		if (popup.getComponentCount() > 0) {
@@ -988,6 +1129,7 @@ public class CalculatorProvider extends ComponentProvider {
 			if (clipboardText != null && !clipboardText.trim().isEmpty()) {
 				displayField.setText(clipboardText.trim());
 				parseInputValue(clipboardText.trim());
+				parseDisplayInput();
 			}
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(getComponent(), 
