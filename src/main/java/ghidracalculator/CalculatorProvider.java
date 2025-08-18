@@ -11,7 +11,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.math.BigInteger;
 import javax.swing.*;
 
-
+import generic.theme.GThemeDefaults;
 import docking.ComponentProvider;
 import docking.action.DockingAction;
 import docking.action.ToolBarData;
@@ -21,6 +21,8 @@ import ghidra.program.model.address.AddressFactory;
 import ghidra.program.util.ProgramLocation;
 import ghidra.app.services.ConsoleService;
 import ghidracalculator.resources.GhidraCalcIcons;
+import ghidracalculator.utils.HashUtils;
+import ghidracalculator.utils.NumberUtils;
 import resources.ResourceManager;
 
 /**
@@ -132,9 +134,12 @@ public class CalculatorProvider extends ComponentProvider {
 		JPanel buttonPanel = createButtonPanel();
 		mainPanel.add(buttonPanel, BorderLayout.CENTER);
 		
-		// Create increment panel
-		JPanel incrementPanel = createIncrementPanel();
-		mainPanel.add(incrementPanel, BorderLayout.SOUTH);
+		// // Create increment panel
+		// JPanel incrementPanel = createIncrementPanel();
+		// mainPanel.add(incrementPanel, BorderLayout.SOUTH);
+
+		JTabbedPane tabPane = buildAdvancedTabs();
+		mainPanel.add(tabPane, BorderLayout.SOUTH);
 		
 		// Initialize display
 		updateDisplay();
@@ -217,8 +222,8 @@ public class CalculatorProvider extends ComponentProvider {
 		displayField.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16));
 		displayField.setHorizontalAlignment(JTextField.RIGHT);
 		displayField.setEditable(true); // Allow keyboard input
-		//displayField.setBackground(Color.WHITE);
-		//displayField.setForeground(Color.BLACK);
+		displayField.setBackground(GThemeDefaults.Colors.BACKGROUND);
+		displayField.setForeground(GThemeDefaults.Colors.FOREGROUND);
 
 		displayField.addMouseListener(new MouseAdapter() {
 			@Override
@@ -262,13 +267,15 @@ public class CalculatorProvider extends ComponentProvider {
 		panel.add(displayField, gbc);
 		
 		// Multi-base display labels
-		gbc.gridwidth = 1; gbc.weightx = 0.0;
+		gbc.gridwidth = 1; 
 
-		gbc.gridx = 0; gbc.gridy = 2; 
+		gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.0;
 		panel.add(new JLabel("HEX:"), gbc);
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		hexLabel = new JLabel("0");
 		hexLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		// wrong label... need to add this to the HEX: label
+		//hexLabel.addMouseListener(new MultiBaseLabelListener());
 		panel.add(hexLabel, gbc);
 		
 		gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.0;
@@ -277,20 +284,20 @@ public class CalculatorProvider extends ComponentProvider {
 		decLabel = new JLabel("0");
 		decLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		panel.add(decLabel, gbc);
-		
+
 		gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0;
-		panel.add(new JLabel("BIN:"), gbc);
-		gbc.gridx = 1; gbc.weightx = 1.0;
-		binLabel = new JLabel("0");
-		binLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-		panel.add(binLabel, gbc);
-		
-		gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.0;
 		panel.add(new JLabel("OCT:"), gbc);
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		octLabel = new JLabel("0");
 		octLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		panel.add(octLabel, gbc);
+		
+		gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.0;
+		panel.add(new JLabel("BIN:"), gbc);
+		gbc.gridx = 1; gbc.weightx = 1.0;
+		binLabel = new JLabel("0");
+		binLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		panel.add(binLabel, gbc);
 		
 		// Status labels for marked values
 		gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2; gbc.weightx = 1.0;
@@ -434,11 +441,97 @@ public class CalculatorProvider extends ComponentProvider {
 	}
 
 	/**
+     * Build the advanced features tabs
+     */
+    private JTabbedPane buildAdvancedTabs() {
+        JTabbedPane tabs = new JTabbedPane();
+		tabs.setBorder(BorderFactory.createMatteBorder(1,0,0,0,GThemeDefaults.Colors.Palette.GRAY));
+
+		// Create increment panel
+		JPanel incrementPanel = createIncrementPanel();
+		tabs.addTab("Increments", incrementPanel);
+        
+        // Number Operations tab
+        JPanel numberOpsPanel = buildNumberOpsPanel();
+        tabs.addTab("Number Ops", numberOpsPanel);
+        
+        // // Pointer Operations tab
+        // pointerOpsPanel = buildPointerOpsPanel();
+        // tabs.addTab("Pointer Ops", pointerOpsPanel);
+        
+        // Hash Operations tab
+        JPanel hashOpsPanel = buildHashOpsPanel();
+        tabs.addTab("Hash Ops", hashOpsPanel);
+        
+        // // Format Operations tab
+        // formatOpsPanel = buildFormatOpsPanel();
+        // tabs.addTab("Format Ops", formatOpsPanel);
+        
+        return tabs;
+    }
+
+	/**
+     * Build the number operations panel
+     */
+    private JPanel buildNumberOpsPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Endianness conversion
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Endianness:"), gbc);
+        
+        JButton swapEndianButton = new JButton("Swap Endian");
+        swapEndianButton.addActionListener(e -> swapEndianness());
+        gbc.gridx = 1;
+        panel.add(swapEndianButton, gbc);
+        
+        // Sign extension
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Sign Extension:"), gbc);
+        
+        JPanel signExtPanel = new JPanel(new FlowLayout());
+        JComboBox<String> fromBitsCombo = new JComboBox<>(new String[]{"8", "16", "32"});
+        JComboBox<String> toBitsCombo = new JComboBox<>(new String[]{"16", "32", "64"});
+        JButton signExtendButton = new JButton("Extend");
+        signExtendButton.addActionListener(e -> performSignExtension(fromBitsCombo, toBitsCombo));
+        
+        signExtPanel.add(new JLabel("From:"));
+        signExtPanel.add(fromBitsCombo);
+        signExtPanel.add(new JLabel("To:"));
+        signExtPanel.add(toBitsCombo);
+        signExtPanel.add(signExtendButton);
+        
+        gbc.gridx = 1;
+        panel.add(signExtPanel, gbc);
+        
+        // 2's complement
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(new JLabel("2's Complement:"), gbc);
+        
+        JPanel twosCompPanel = new JPanel(new FlowLayout());
+        JComboBox<String> bitWidthCombo = new JComboBox<>(new String[]{"8", "16", "32", "64"});
+        JButton twosCompButton = new JButton("2's Comp");
+        twosCompButton.addActionListener(e -> performTwosComplement(bitWidthCombo));
+        
+        twosCompPanel.add(bitWidthCombo);
+        twosCompPanel.add(new JLabel("bits"));
+        twosCompPanel.add(twosCompButton);
+        
+        gbc.gridx = 1;
+        panel.add(twosCompPanel, gbc);
+        
+        return panel;
+    }
+
+	/**
 	 * Create the increment/decrement and bitwise operations panel
 	 */
 	private JPanel createIncrementPanel() {
 		JPanel panel = new JPanel(new GridLayout(2, 4, 2, 2));
-		panel.setBorder(BorderFactory.createTitledBorder("Quick Operations"));
+		//panel.setBorder(BorderFactory.createTitledBorder("Quick Operations"));
 		
 		// Row 1: Increment operations
 		panel.add(createButton("+1", e -> increment(BigInteger.ONE)));
@@ -454,6 +547,42 @@ public class CalculatorProvider extends ComponentProvider {
 		
 		return panel;
 	}
+
+	/**
+     * Build the hash operations panel
+     */
+    private JPanel buildHashOpsPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Hash algorithm selection
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Algorithm:"), gbc);
+        
+        JComboBox<HashUtils.HashAlgorithm> hashAlgoCombo = new JComboBox<>(HashUtils.HashAlgorithm.values());
+        gbc.gridx = 1;
+        panel.add(hashAlgoCombo, gbc);
+        
+        // Hash input options
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Hash Input:"), gbc);
+        
+        JPanel hashInputPanel = new JPanel(new FlowLayout());
+        JButton hashValueButton = new JButton("Hash Value");
+       //JButton hashStringButton = new JButton("Hash String");
+        hashValueButton.addActionListener(e -> hashCurrentValue(hashAlgoCombo));
+        //hashStringButton.addActionListener(e -> hashStringInput(hashAlgoCombo));
+        
+        hashInputPanel.add(hashValueButton);
+        //hashInputPanel.add(hashStringButton);
+        
+        gbc.gridx = 1;
+        panel.add(hashInputPanel, gbc);
+        
+        return panel;
+    }
 
 	/**
 	 * Create a button with the specified text and action
@@ -500,24 +629,41 @@ public class CalculatorProvider extends ComponentProvider {
 		// Update multi-base labels
 		hexLabel.setText(sign + "0x" + currentValue.abs().toString(16).toUpperCase());
 		decLabel.setText(currentValue.toString(10));
-		binLabel.setText(sign + "0b" + currentValue.abs().toString(2));
 		octLabel.setText(sign + "0" + currentValue.abs().toString(8));
+
+		// Reverse binary string, group into 4 bits, add a space, and reverse again
+		// String binReversed = new StringBuilder(currentValue.abs().toString(2)).reverse().toString();
+		// String binFormatted = new StringBuilder(binReversed.replaceAll("(.{4})", "$1 ").trim()).reverse().toString();
+
+		// Pad to 4-bit alignment and add spaces
+		String binaryStr = currentValue.abs().toString(2);
+		int padLen = (4 - (binaryStr.length() % 4)) % 4;
+		String paddedBinary = "0".repeat(padLen) + binaryStr;
+		String binFormatted = paddedBinary.replaceAll("(.{4})", "$1 ").trim();
+		binLabel.setText(sign + binFormatted);
+
+		// Sample code to always have 32 bits shown
+		// String binaryStr = currentValue.abs().toString(2);
+		// int targetLength = ((binaryStr.length() + 31) / 32) * 32; // Round up to next 32-bit boundary
+		// String paddedBinary = String.format("%" + targetLength + "s", binaryStr).replace(' ', '0');
+		// String groupedBinary = paddedBinary.replaceAll("(.{4})", "$1 ").trim();
+		// binLabel.setText(sign + "0b" + groupedBinary);
 
 		// Update address validation info in tooltip
 		String addressInfo = getAddressInfo(currentValue);
 		displayField.setToolTipText(addressInfo);
 		
 		// Change display field color based on address validity
-		if (isValidAddress(currentValue)) {
-			displayField.setBackground(new Color(230, 255, 230)); // Light green
-		} else {
-			displayField.setBackground(Color.WHITE);
-		}
+		// This makes it hard to use themed colors
+		// if (isValidAddress(currentValue)) {
+		// 	displayField.setBackground(new Color(230, 255, 230)); // Light green
+		// } else {
+		// 	displayField.setBackground(Color.WHITE);
+		// }
 	}
 
 	/**
 	 * Append a digit to the current number
-	 * TODO: Allow for using the current theme for colors
 	 */
 	private void appendDigit(String digit) {
 		if (newNumber) {
@@ -736,6 +882,71 @@ public class CalculatorProvider extends ComponentProvider {
 	}
 
 	/**
+     * Perform endianness swap
+     */
+    private void swapEndianness() {
+        // Determine bit width based on value size
+        int bitWidth = currentValue.bitLength() <= 16 ? 16 : 
+                      currentValue.bitLength() <= 32 ? 32 : 64;
+        
+        BigInteger swapped = NumberUtils.convertEndianness(
+            currentValue, bitWidth, 
+            NumberUtils.Endianness.LITTLE_ENDIAN, 
+            NumberUtils.Endianness.BIG_ENDIAN
+        );
+        
+        currentValue = swapped;
+        currentOperation = "SWAP_ENDIAN";
+        newNumber = false;
+        updateDisplay();
+    }
+    
+    /**
+     * Perform sign extension
+     */
+    private void performSignExtension(JComboBox<String> fromBits, JComboBox<String> toBits) {
+        int fromBitWidth = Integer.parseInt((String) fromBits.getSelectedItem());
+        int toBitWidth = Integer.parseInt((String) toBits.getSelectedItem());
+        
+        BigInteger extended = NumberUtils.signExtend(currentValue, fromBitWidth, toBitWidth);
+        
+        currentValue = extended;
+        currentOperation = "SIGN_EXT_" + fromBitWidth + "_TO_" + toBitWidth;
+        newNumber = false;
+        updateDisplay();
+    }
+    
+    /**
+     * Perform 2's complement
+     */
+    private void performTwosComplement(JComboBox<String> bitWidth) {
+        int width = Integer.parseInt((String) bitWidth.getSelectedItem());
+        
+        BigInteger complement = NumberUtils.twosComplement(currentValue, width);
+        
+        currentValue = complement;
+        currentOperation = "2S_COMP_" + width;
+        newNumber = false;
+        updateDisplay();
+    }
+
+	/**
+     * Hash the current value
+     */
+    private void hashCurrentValue(JComboBox<HashUtils.HashAlgorithm> algoCombo) {
+        HashUtils.HashAlgorithm algorithm = (HashUtils.HashAlgorithm) algoCombo.getSelectedItem();
+        HashUtils.HashResult result = HashUtils.calculateHash(currentValue, algorithm);
+        
+        currentValue = result.toBigInteger();
+        currentOperation = "HASH_" + algorithm.name();
+        newNumber = false;
+        updateDisplay();
+        
+        // Show hash info in status
+        //statusLabel.setText("Hash: " + algorithm.name() + " (" + algorithm.getBitLength() + " bits)");
+    }
+
+	/**
 	 * Mark the current value for later recall
 	 */
 	private void markCurrentValue() {
@@ -904,6 +1115,22 @@ public class CalculatorProvider extends ComponentProvider {
 		markedAddressLabel.setText("Marked Address: None");
 	}
 
+	 /**
+     * Mouse listener for multi-base labels
+     */
+    private class MultiBaseLabelListener extends MouseAdapter {
+		@Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getSource() instanceof JLabel) {
+					JLabel sourceLabel = (JLabel) e.getSource();
+					String labelText = sourceLabel.getText();
+					inputMode = labelText;
+					// clear all label highlights
+					// set label highlight
+            	}
+            }
+	}
+
 	/**
 	 * Handle keyboard input for calculator operations
 	 * TODO: This needs to be fixed so that enter doesn't need to be hit
@@ -980,12 +1207,12 @@ public class CalculatorProvider extends ComponentProvider {
 			// Invalid input, show error briefly
 			String originalText = displayField.getText();
 			displayField.setText("ERROR");
-			displayField.setBackground(Color.PINK);
+			displayField.setBackground(GThemeDefaults.Colors.Palette.PINK);
 			
 			// Reset after 1 second
 			Timer timer = new Timer(1000, evt -> {
 				displayField.setText(originalText);
-				displayField.setBackground(Color.WHITE);
+				displayField.setBackground(GThemeDefaults.Colors.BACKGROUND);
 			});
 			timer.setRepeats(false);
 			timer.start();
