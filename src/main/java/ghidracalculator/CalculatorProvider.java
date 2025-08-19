@@ -9,12 +9,15 @@ import java.awt.event.KeyListener;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.DataFlavor;
 import java.math.BigInteger;
-import javax.swing.*;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.swing.*;
 
 import docking.ComponentProvider;
 import docking.action.DockingAction;
 import docking.action.ToolBarData;
+import generic.theme.GThemeDefaults;
 import ghidra.app.services.GoToService;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressFactory;
@@ -35,20 +38,17 @@ public class CalculatorProvider extends ComponentProvider {
 	
 	// GUI Components
 	private JTextField displayField;
-	private JLabel hexLabel;
-	private JLabel decLabel;
-	private JLabel binLabel;
-	private JLabel octLabel;
-	private JLabel markedValueLabel;
-	private JLabel markedAddressLabel;
-	private JComboBox<String> inputModeCombo;
+	private JLabel hexModeLabel, decModeLabel, octModeLabel, binModeLabel;
+	private JLabel hexValueLabel, decValueLabel, octValueLabel, binValueLabel;
+	private JLabel markedValueLabel, markedAddressLabel;
+	private Map<String, JLabel> modeLabels, valueLabels;
 	
 	// Calculator state
 	protected BigInteger currentValue = BigInteger.ZERO;
 	private BigInteger previousValue = BigInteger.ZERO;
 	private String currentOperation = "";
 	protected boolean newNumber = true;
-	private String inputMode = "HEX"; // HEX, DEC, BIN, OCT
+	private String inputMode = "HEX"; // Default to hex
 	
 	// Marking functionality
 	private BigInteger markedValue = null;
@@ -137,88 +137,51 @@ public class CalculatorProvider extends ComponentProvider {
 		mainPanel.add(incrementPanel, BorderLayout.SOUTH);
 		
 		// Initialize display
-		updateDisplay();
+		setCurrentMode("HEX");
 		
 		return mainPanel;
-	}
-
-	/**
-	 * Navigate to an address if the value represents a valid address
-	 */
-	public void navigateToAddress(BigInteger value) {
-		try {
-			// Check if we have an active program
-			if (plugin.getCurrentProgram() == null) {
-				JOptionPane.showMessageDialog(getComponent(), 
-					"No program loaded. Cannot navigate to address.", 
-					"Navigation Error", 
-					JOptionPane.WARNING_MESSAGE);
-				return;
-			}
-			
-			// Convert value to address
-			AddressFactory addressFactory = plugin.getCurrentProgram().getAddressFactory();
-			Address address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
-			
-			// Check if address is valid in the program
-			if (!plugin.getCurrentProgram().getMemory().contains(address)) {
-				JOptionPane.showMessageDialog(getComponent(), 
-					String.format("Address 0x%s is not valid in the current program.", 
-						value.toString(16).toUpperCase()), 
-					"Invalid Address", 
-					JOptionPane.WARNING_MESSAGE);
-				return;
-			}
-			
-			// Navigate to the address
-			GoToService goToService = plugin.getTool().getService(GoToService.class);
-			if (goToService != null) {
-				ProgramLocation location = new ProgramLocation(plugin.getCurrentProgram(), address);
-				goToService.goTo(location);
-			} else {
-				JOptionPane.showMessageDialog(getComponent(), 
-					"GoTo service not available.", 
-					"Navigation Error", 
-					JOptionPane.ERROR_MESSAGE);
-			}
-			
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(getComponent(), 
-				String.format("Error navigating to address: %s", e.getMessage()), 
-				"Navigation Error", 
-				JOptionPane.ERROR_MESSAGE);
-		}
 	}
 
 	/**
 	 * Create the display panel with multi-base output
 	 */
 	private JPanel createDisplayPanel() {
+		hexModeLabel = createModeLabel("HEX:   ");
+		decModeLabel = createModeLabel("DEC:   ");
+		octModeLabel = createModeLabel("OCT:   ");
+		binModeLabel = createModeLabel("BIN:   ");
+
+		hexValueLabel = createValueLabel();
+		decValueLabel = createValueLabel();
+		octValueLabel = createValueLabel();
+		binValueLabel = createValueLabel();
+
+		modeLabels = new HashMap<>();
+        modeLabels.put("HEX", hexModeLabel);
+        modeLabels.put("DEC", decModeLabel);
+        modeLabels.put("OCT", octModeLabel);
+        modeLabels.put("BIN", binModeLabel);
+
+		valueLabels = new HashMap<>();
+        valueLabels.put("HEX", hexValueLabel);
+        valueLabels.put("DEC", decValueLabel);
+        valueLabels.put("OCT", octValueLabel);
+        valueLabels.put("BIN", binValueLabel);
+
 		JPanel panel = new JPanel(new GridBagLayout());
 		panel.setBorder(BorderFactory.createTitledBorder("Display"));
 		GridBagConstraints gbc = new GridBagConstraints();
-		
-		// Input mode selector
-		gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST;
-		panel.add(new JLabel("Input Mode:"), gbc);
-		
-		gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
-		inputModeCombo = new JComboBox<>(new String[]{"HEX", "DEC", "BIN", "OCT"});
-		inputModeCombo.setSelectedItem(inputMode);
-		inputModeCombo.addActionListener(e -> {
-			inputMode = (String) inputModeCombo.getSelectedItem();
-			updateDisplay();
-		});
-		panel.add(inputModeCombo, gbc);
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
 
 		// Main display field
-		gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2; gbc.weightx = 1.0;
+		gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2; gbc.weightx = 1.0;
 		displayField = new JTextField();
 		displayField.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16));
 		displayField.setHorizontalAlignment(JTextField.RIGHT);
 		displayField.setEditable(true); // Allow keyboard input
-		//displayField.setBackground(Color.WHITE);
-		//displayField.setForeground(Color.BLACK);
+		displayField.setBackground(GThemeDefaults.Colors.BACKGROUND);
+		displayField.setForeground(GThemeDefaults.Colors.FOREGROUND);
 
 		displayField.addMouseListener(new MouseAdapter() {
 			@Override
@@ -262,44 +225,40 @@ public class CalculatorProvider extends ComponentProvider {
 		panel.add(displayField, gbc);
 		
 		// Multi-base display labels
-		gbc.gridwidth = 1; gbc.weightx = 0.0;
+		gbc.gridwidth = 1; 
 
-		gbc.gridx = 0; gbc.gridy = 2; 
-		panel.add(new JLabel("HEX:"), gbc);
-		gbc.gridx = 1; gbc.weightx = 1.0;
-		hexLabel = new JLabel("0");
-		hexLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-		panel.add(hexLabel, gbc);
-		
-		gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.0;
-		panel.add(new JLabel("DEC:"), gbc);
-		gbc.gridx = 1; gbc.weightx = 1.0;
-		decLabel = new JLabel("0");
-		decLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-		panel.add(decLabel, gbc);
-		
-		gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0.0;
-		panel.add(new JLabel("BIN:"), gbc);
-		gbc.gridx = 1; gbc.weightx = 1.0;
-		binLabel = new JLabel("0");
-		binLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-		panel.add(binLabel, gbc);
-		
-		gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0.0;
-		panel.add(new JLabel("OCT:"), gbc);
-		gbc.gridx = 1; gbc.weightx = 1.0;
-		octLabel = new JLabel("0");
-		octLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-		panel.add(octLabel, gbc);
-		
+		String[] modes = {"HEX", "DEC", "OCT", "BIN"};
+		for (int i = 0; i < modes.length; i++) {
+            String mode = modes[i];
+
+			gbc.gridx = 0; gbc.gridy = 1 + i; gbc.weightx = 0.0;
+			panel.add(modeLabels.get(mode), gbc);
+
+			gbc.gridx = 1; gbc.weightx = 1.0;
+			panel.add(valueLabels.get(mode), gbc);
+		}
+
+		// Add mouse listeners to mode labels
+        for (Map.Entry<String, JLabel> entry : modeLabels.entrySet()) {
+            String mode = entry.getKey();
+            JLabel label = entry.getValue();
+            
+            label.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    setCurrentMode(mode);
+                }
+            });
+        }
+
 		// Status labels for marked values
-		gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2; gbc.weightx = 1.0;
+		gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2; gbc.weightx = 1.0;
 		markedValueLabel = new JLabel("Marked Value: None");
 		markedValueLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
 		//markedValueLabel.setForeground(Color.BLUE);
 		panel.add(markedValueLabel, gbc);
 		
-		gbc.gridy = 7;
+		gbc.gridy = 6;
 		markedAddressLabel = new JLabel("Marked Address: None");
 		markedAddressLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
 		//markedAddressLabel.setForeground(Color.BLUE);
@@ -307,6 +266,36 @@ public class CalculatorProvider extends ComponentProvider {
 		
 		return panel;
 	}
+
+	/**
+     * Create a clickable label for input mode selection
+     */
+    private JLabel createModeLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+		label.setOpaque(false);
+		label.setBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, GThemeDefaults.Colors.Viewport.UNEDITABLE_BACKGROUND));
+		label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return label;
+    }
+
+	/**
+     * Create value label
+     */
+    private JLabel createValueLabel() {
+        JLabel label = new JLabel("0");
+        label.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        return label;
+    }
+
+	private void setCurrentMode(String mode) {
+        // Update highlighting
+        modeLabels.get(inputMode).setBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, GThemeDefaults.Colors.Viewport.UNEDITABLE_BACKGROUND));
+		modeLabels.get(mode).setBorder(BorderFactory.createMatteBorder(0,3,0,0,GThemeDefaults.Colors.Palette.BLUE));
+        
+        inputMode = mode;
+        updateDisplay();
+    }
 
 	private JPanel createButtonPanel() {
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
@@ -498,26 +487,73 @@ public class CalculatorProvider extends ComponentProvider {
 		displayField.setText(displayText);
 		
 		// Update multi-base labels
-		hexLabel.setText(sign + "0x" + currentValue.abs().toString(16).toUpperCase());
-		decLabel.setText(currentValue.toString(10));
-		binLabel.setText(sign + "0b" + currentValue.abs().toString(2));
-		octLabel.setText(sign + "0" + currentValue.abs().toString(8));
+		hexValueLabel.setText(sign + "0x" + currentValue.abs().toString(16).toUpperCase());
+		decValueLabel.setText(currentValue.toString(10));
+		octValueLabel.setText(sign + "0" + currentValue.abs().toString(8));
+
+		// Binary Display: Pad to 4-bit alignment and add spaces
+		String binaryStr = currentValue.abs().toString(2);
+		int padLen = (4 - (binaryStr.length() % 4)) % 4;
+		String paddedBinary = "0".repeat(padLen) + binaryStr;
+		String binFormatted = paddedBinary.replaceAll("(.{4})", "$1 ").trim();
+		binValueLabel.setText(sign + binFormatted);
+		
 
 		// Update address validation info in tooltip
 		String addressInfo = getAddressInfo(currentValue);
 		displayField.setToolTipText(addressInfo);
-		
-		// Change display field color based on address validity
-		if (isValidAddress(currentValue)) {
-			displayField.setBackground(new Color(230, 255, 230)); // Light green
-		} else {
-			displayField.setBackground(Color.WHITE);
+	}
+
+	/**
+	 * Navigate to an address if the value represents a valid address
+	 */
+	public void navigateToAddress(BigInteger value) {
+		try {
+			// Check if we have an active program
+			if (plugin.getCurrentProgram() == null) {
+				JOptionPane.showMessageDialog(getComponent(), 
+					"No program loaded. Cannot navigate to address.", 
+					"Navigation Error", 
+					JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			
+			// Convert value to address
+			AddressFactory addressFactory = plugin.getCurrentProgram().getAddressFactory();
+			Address address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+			
+			// Check if address is valid in the program
+			if (!plugin.getCurrentProgram().getMemory().contains(address)) {
+				JOptionPane.showMessageDialog(getComponent(), 
+					String.format("Address 0x%s is not valid in the current program.", 
+						value.toString(16).toUpperCase()), 
+					"Invalid Address", 
+					JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			
+			// Navigate to the address
+			GoToService goToService = plugin.getTool().getService(GoToService.class);
+			if (goToService != null) {
+				ProgramLocation location = new ProgramLocation(plugin.getCurrentProgram(), address);
+				goToService.goTo(location);
+			} else {
+				JOptionPane.showMessageDialog(getComponent(), 
+					"GoTo service not available.", 
+					"Navigation Error", 
+					JOptionPane.ERROR_MESSAGE);
+			}
+			
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(getComponent(), 
+				String.format("Error navigating to address: %s", e.getMessage()), 
+				"Navigation Error", 
+				JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
 	/**
 	 * Append a digit to the current number
-	 * TODO: Allow for using the current theme for colors
 	 */
 	private void appendDigit(String digit) {
 		if (newNumber) {
@@ -980,12 +1016,12 @@ public class CalculatorProvider extends ComponentProvider {
 			// Invalid input, show error briefly
 			String originalText = displayField.getText();
 			displayField.setText("ERROR");
-			displayField.setBackground(Color.PINK);
+			displayField.setBackground(GThemeDefaults.Colors.Palette.PINK);
 			
 			// Reset after 1 second
 			Timer timer = new Timer(1000, evt -> {
 				displayField.setText(originalText);
-				displayField.setBackground(Color.WHITE);
+				displayField.setBackground(GThemeDefaults.Colors.BACKGROUND);
 			});
 			timer.setRepeats(false);
 			timer.start();
