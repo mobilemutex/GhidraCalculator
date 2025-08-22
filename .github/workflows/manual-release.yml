@@ -81,6 +81,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag_name }}
           name: ${{ github.event.inputs.tag_name }}
           body: ${{ github.event.inputs.release_description }}
           files: Calculator_Ghidra_*/*.zip
