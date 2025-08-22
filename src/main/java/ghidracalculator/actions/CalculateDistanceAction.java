@@ -10,7 +10,7 @@ public class CalculateDistanceAction extends ListingContextAction {
     protected final CalculatorPlugin plugin;
 
     public CalculateDistanceAction(CalculatorPlugin plugin, String groupName) {
-        super("Mark Address for Distance", plugin.getName());
+        super("Calculate Distance", plugin.getName());
         this.plugin = plugin;
         setPopupMenuData(new MenuData(new String[] { "Calculator", ""}, groupName));
     }
@@ -34,7 +34,7 @@ public class CalculateDistanceAction extends ListingContextAction {
             return false;
         }
         
-        long markedAddress = plugin.getProvider().getMarkedAddress();
+        long markedAddress = plugin.getProvider().getCalculatorLogic().getMarkedAddress();
         String menuName = "Calculate Distance from 0x" + Long.toHexString(markedAddress) + " to 0x" + context.getAddress().toString();
         getPopupMenuData().setMenuItemNamePlain(menuName);
         return true;

@@ -38,7 +38,7 @@ public class PerformMarkedScalarOperationAction extends AbstractScalarAction {
         String menuName = operationString1 + 
             scalar.toString() +
             operationString2 + 
-            plugin.getProvider().getMarkedValue().toString(16);
+            plugin.getProvider().getCalculatorLogic().getMarkedValue().toString(16);
 
         return menuName;
     }
