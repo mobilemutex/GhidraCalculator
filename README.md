@@ -1,6 +1,8 @@
 # Ghidra Calculator Plugin
 
-A calculator plugin for Ghidra
+A Calculator plugin for Ghidra that adds a GUI calculator and right-click options for adding addresses, memory, and constant values to the calculator, as well as options for calculating distance between addresses.
+
+**Supports Ghidra 11.3 and later**
 
 
 ![](screenshots/ghidraCalcMainScreenshot.PNG)
@@ -10,22 +12,26 @@ A calculator plugin for Ghidra
 
 - **Multi-base Display**: Simultaneous hex, decimal, binary, and octal display
 - **Input Mode Switching**: Switch between hex/dec/bin/oct input modes
-- **Standard Operations**: Addition, subtraction, multiplication, division, modulo
+- **Standard Operations**: Addition, subtraction, multiplication, division, modulo, flip sign
 - **Bitwise Operations**: AND, OR, XOR, NOT, NOR, Rotate, Shift
 - **Quick Increment/Decrement**: ±1, ±0x10, ±0x100, ±0x1000 buttons
 - **Value Marking**: Mark and recall values
-- **Real-time Conversion**: See values in all number bases simultaneously
 - **History Window**: See previous calculations
-  - Double-click to jump to resulting address, if it's a valid address
+  - Double-click to jump to resulting address if it's a valid address
   - Load result into calculator
-- **Context Menu Integration**: Right-click in disassembler to:
-  - Add addresses to calculator
-  - Add memory values to calculator
-  - Add scalar operands to calculator
-  - Mark addresses for distance calculation
-  - Mark values for comparison operations
-  - Perform addition, subtraction, and xor'ing of marked values
-  - Add constants from right-click menu in Decompiler window
+- **Context Menu Integration**: 
+  - Right-click in disassembler to:
+    - Add addresses to calculator
+    - Add memory values to calculator
+    - Add scalar operands to calculator
+    - Mark addresses for distance calculation
+    - Mark values for comparison operations
+    - Perform addition, subtraction, and xor'ing of marked values
+  - Right click in decompiler to:
+    - Add constants to calculator
+    - Mark constants
+
+Submit new feature ideas as a Github issue and I will implement them!
 
 ## Screenshots
 
@@ -46,7 +52,9 @@ A calculator plugin for Ghidra
 2. Search for **"Calculator"**
 3. Check the box next to **"CalculatorPlugin"**
 4. Click **OK**
+5. The Calculator and history windows should appear, but if not, follow step 3
 
 ### Step 3: Access the Calculator
-1. Go to **Window → Calculator**
-2. The calculator window will appear and can be docked anywhere
+1. Go to **Window → Calculator** and click on **Calculator**
+2. Go to **Window → Calculator** and click on **Calculator History**
+3. The calculator and history windows will appear and can be docked anywhere
