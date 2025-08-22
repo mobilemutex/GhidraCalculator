@@ -1,0 +1,86 @@
+name: Manual Release
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release'
+        required: true
+      release_description:
+        description: 'Description for the release'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ghidra:
+          - "11.3"
+          - "11.3.1"
+          - "11.3.2"
+          - "11.4"
+          - "11.4.1"
+
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Ghidra ${{ matrix.ghidra }}
+        uses: antoniovazquezblanco/setup-ghidra@v2.0.12
+        with:
+          auth_token: ${{ secrets.GITHUB_TOKEN }}
+          version: ${{ matrix.ghidra }}
+
+      - name: Build
+        run: gradle buildExtension
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Calculator_Ghidra_${{ matrix.ghidra }}
+          path: dist/*.zip
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Create and Push Tag
+        run: |
+          git tag ${{ github.event.inputs.tag_name }}
+          git push origin ${{ github.event.inputs.tag_name }}
+      
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.event.inputs.tag_name }}
+          body: ${{ github.event.inputs.release_description }}
+          files: Calculator_Ghidra_*/*.zip
