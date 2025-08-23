@@ -2,11 +2,14 @@ package ghidracalculator;
 
 import java.math.BigInteger;
 
+import ghidra.app.services.ConsoleService;
+
 /**
  * Calculator Logic class to handle core arithmetic operations and state management
  */
 public class CalculatorLogic {
     private CalculatorProvider provider;
+    private ConsoleService consoleService;
     
     // Calculator state
     protected BigInteger currentValue = BigInteger.ZERO;
@@ -19,8 +22,9 @@ public class CalculatorLogic {
     private BigInteger markedValue = null;
     private long markedAddress = -1;
     
-    public CalculatorLogic(CalculatorProvider provider) {
+    public CalculatorLogic(CalculatorProvider provider, ConsoleService consoleService) {
         this.provider = provider;
+        this.consoleService = consoleService;
     }
     
     public BigInteger getCurrentValue() {
@@ -83,9 +87,6 @@ public class CalculatorLogic {
      * Set the current operation
      */
     public void setOperation(String operation) {
-        if (!currentOperation.isEmpty()) {
-            provider.performEquals();
-        }
         previousValue = currentValue;
         currentOperation = operation;
         newNumber = true;
@@ -163,14 +164,101 @@ public class CalculatorLogic {
         
         // Add to history
         provider.addToHistory(result, operationString);
+
+        provider.getUI().updateDisplay();
+
         return result;
     }
+
+    /**
+	 * Perform operation for specified operator
+	 */
+	public void performOperation(String op) {
+		if (op != null) {
+			switch (op) {
+				case "\u00F7":
+				case "\u00D7":
+				case "-":
+				case "+":
+				case "AND":
+				case "OR":
+				case "XOR":
+				case "NOR":
+				case "MOD":
+				case "RoR":
+				case "RoL":
+				case "<<":
+				case ">>":
+					setOperation(op);
+					break;
+				case "NOT":
+					bitwiseNot();
+					break;
+				case "+/-":
+					flipSign();
+					break;
+				case "=":
+					performEquals();
+					break;
+				case "CLR":
+					clearCalculator();
+					break;
+			}
+		}
+		return;
+	}
+
+    /**
+	 * Append a digit to the current number
+	 */
+	public void appendDigit(String digit) {
+		if (isNewNumber()) {
+			setCurrentValue(BigInteger.ZERO);
+			setNewNumber(false);
+		}
+		
+		// Validate digit for current input mode
+		int digitValue;
+		try {
+			switch (getInputMode()) {
+				case "HEX":
+					digitValue = Integer.parseInt(digit, 16);
+					setCurrentValue(getCurrentValue().multiply(BigInteger.valueOf(16)).add(BigInteger.valueOf(digitValue)));
+					break;
+				case "DEC":
+					if (digit.matches("[0-9]")) {
+						digitValue = Integer.parseInt(digit, 10);
+						setCurrentValue(getCurrentValue().multiply(BigInteger.valueOf(10)).add(BigInteger.valueOf(digitValue)));
+					}
+					break;
+				case "BIN":
+					if (digit.matches("[01]")) {
+						digitValue = Integer.parseInt(digit, 2);
+						setCurrentValue(getCurrentValue().multiply(BigInteger.valueOf(2)).add(BigInteger.valueOf(digitValue)));
+					}
+					break;
+				case "OCT":
+					if (digit.matches("[0-7]")) {
+						digitValue = Integer.parseInt(digit, 8);
+						setCurrentValue(getCurrentValue().multiply(BigInteger.valueOf(8)).add(BigInteger.valueOf(digitValue)));
+					}
+					break;
+			}
+		} catch (NumberFormatException e) {
+			// Invalid digit for current mode, ignore
+			return;
+		}
+		
+		provider.getUI().updateDisplay();
+	}
     
     /**
      * Flip sign of current value
      */
     public void flipSign() {
         currentValue = currentValue.negate();
+
+        provider.getUI().updateDisplay();
     }
     
     /**
@@ -181,6 +269,8 @@ public class CalculatorLogic {
         previousValue = BigInteger.ZERO;
         currentOperation = "";
         newNumber = true;
+
+        provider.getUI().updateDisplay();
     }
     
     /**
@@ -210,6 +300,8 @@ public class CalculatorLogic {
         String operationString = String.format("NOT %s",
             previousValue.toString(16).toUpperCase());
         provider.addToHistory(currentValue, operationString);
+
+        provider.getUI().updateDisplay();
     }
     
     /**
@@ -277,6 +369,7 @@ public class CalculatorLogic {
             // Show result in calculator
             currentValue = result;
             newNumber = true;
+            provider.getUI().updateDisplay();
             
             // Add to history
             String operationString = String.format("%s %s %s",
@@ -284,6 +377,21 @@ public class CalculatorLogic {
                 operationSymbol,
                 currentMemValue.toString(16).toUpperCase());
             provider.addToHistory(currentValue, operationString);
+
+            //Print results to console
+            String message = String.format(
+				"Marked Value Operation:\n" +
+				"Marked: 0x%s\n" +
+				"Current: 0x%s\n" +
+				"Operation: %s\n" +
+				"Result: 0x%s (%s)",
+				markedValue.toString(16).toUpperCase(),
+				currentValue.toString(16).toUpperCase(),
+				operationSymbol,
+				result.toString(16).toUpperCase(),
+				result.toString(10)
+			);
+			consoleService.println(message);
             
             return result;
         }

@@ -169,7 +169,7 @@ public class HistoryProvider extends ComponentProvider{
 			BigInteger value = historyValues.get(selectedIndex);
 			plugin.getProvider().getCalculatorLogic().setCurrentValue(value);
             plugin.getProvider().getCalculatorLogic().setNewNumber(true);
-			plugin.getProvider().updateDisplay();
+			plugin.getProvider().getUI().updateDisplay();
 		}
 	}
 

@@ -8,6 +8,7 @@ import ghidra.app.services.GoToService;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressFactory;
 import ghidra.program.util.ProgramLocation;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorProvider;
 
 /**
@@ -15,9 +16,11 @@ import ghidracalculator.CalculatorProvider;
  */
 public class AddressNavigator {
     private CalculatorProvider provider;
+    private CalculatorLogic calculatorLogic;
     
-    public AddressNavigator(CalculatorProvider provider) {
+    public AddressNavigator(CalculatorProvider provider, CalculatorLogic calculatorLogic) {
         this.provider = provider;
+        this.calculatorLogic = calculatorLogic;
     }
     
     /**
@@ -90,6 +93,6 @@ public class AddressNavigator {
      * Jump to the current calculator value as an address in the listing
      */
     public void jumpToCurrentAddress() {
-        navigateToAddress(provider.currentValue);
+        navigateToAddress(calculatorLogic.getCurrentValue());
     }
 }

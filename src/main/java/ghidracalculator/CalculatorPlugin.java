@@ -84,9 +84,9 @@ public class CalculatorPlugin extends ProgramPlugin {
 		calculateDistanceAction = new CalculateDistanceAction(this, CALC_ADDRESS);
 		addScalarAction = new AddScalarAction(this, "Add scalar operand to Calculator", CALC_ADD);
 		markScalarAction = new MarkScalarAction(this, "Mark scalar operand", CALC_MARK);
-		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand", "add", CALC_SCALAR);
-		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand", "subtract", CALC_SCALAR);
-		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand", "xor", CALC_SCALAR);
+		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, provider.getCalculatorLogic(), "Add to marked scalar operand", "add", CALC_SCALAR);
+		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, provider.getCalculatorLogic(), "Subtract from marked scalar operand", "subtract", CALC_SCALAR);
+		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, provider.getCalculatorLogic(), "XOR with marked scalar operand", "xor", CALC_SCALAR);
 		addDecompilerConstant = new AddDecompilerConstantAction(this);
 		markDecompilerConstant = new MarkDecompilerConstantAction(this);
 

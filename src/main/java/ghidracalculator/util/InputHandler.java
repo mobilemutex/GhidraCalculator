@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
 import generic.theme.GThemeDefaults;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorProvider;
 
 /**
@@ -17,9 +18,11 @@ import ghidracalculator.CalculatorProvider;
  */
 public class InputHandler {
     private CalculatorProvider provider;
+    private CalculatorLogic calculatorLogic;
     
-    public InputHandler(CalculatorProvider provider) {
+    public InputHandler(CalculatorProvider provider, CalculatorLogic calculatorLogic) {
         this.provider = provider;
+        this.calculatorLogic = calculatorLogic;
     }
     
     /**
@@ -36,7 +39,7 @@ public class InputHandler {
                 e.consume();
                 return;
             case KeyEvent.VK_ESCAPE:
-                provider.clearCalculator();
+                calculatorLogic.clearCalculator();
                 e.consume();
                 return;
             case KeyEvent.VK_BACK_SPACE:
@@ -47,31 +50,31 @@ public class InputHandler {
         
         // Handle operation keys
         if (keyChar == '+') {
-            provider.setOperation("+");
+            calculatorLogic.setOperation("+");
             e.consume();
         } else if (keyChar == '-') {
-            provider.setOperation("-");
+            calculatorLogic.setOperation("-");
             e.consume();
         } else if (keyChar == '*') {
-            provider.setOperation("*");
+            calculatorLogic.setOperation("*");
             e.consume();
         } else if (keyChar == '/') {
-            provider.setOperation("/");
+            calculatorLogic.setOperation("/");
             e.consume();
         } else if (keyChar == '=') {
-            provider.performEquals();
+            calculatorLogic.performEquals();
             e.consume();
         } else if (keyChar == '&') {
-            provider.setOperation("AND");
+            calculatorLogic.setOperation("AND");
             e.consume();
         } else if (keyChar == '|') {
-            provider.setOperation("OR");
+            calculatorLogic.setOperation("OR");
             e.consume();
         } else if (keyChar == '^') {
-            provider.setOperation("XOR");
+            calculatorLogic.setOperation("XOR");
             e.consume();
         } else if (keyChar == '~') {
-            provider.bitwiseNot();
+            calculatorLogic.bitwiseNot();
             e.consume();
         }
         // For other characters, let the text field handle them normally (This is kind of broken and clunky)
@@ -90,7 +93,7 @@ public class InputHandler {
             BigInteger value = provider.parseInputValue(input);
             provider.getCalculatorLogic().setCurrentValue(value);
             provider.getCalculatorLogic().setNewNumber(true);
-            provider.updateDisplay();
+            provider.getUI().updateDisplay();
         } catch (NumberFormatException e) {
             // Invalid input, show error briefly
             String originalText = provider.getDisplayField().getText();
