@@ -8,9 +8,3 @@ Feature Additions:
 - exporting/importing history windows
     - saving/loading sessions
 - batch operations on multiple selected values
-- move performMarkedValueOperation to performMarkedScalarOperationAction.java
-- move parseInputValue to InputHandler.java
-- move appendDigit to CalculatorLogic.java
-- move performOperation to CalculatorLogic.java
-- move calculateDistanceToMarked to CalculatorLogic.java
-- add getters and setters everywhere

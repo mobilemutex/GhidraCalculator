@@ -1,6 +1,8 @@
 package ghidracalculator.ui;
 
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -15,18 +17,16 @@ import javax.swing.*;
 import generic.theme.GThemeDefaults;
 import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorProvider;
-import ghidracalculator.util.AddressNavigator;
-import ghidracalculator.util.InputHandler;
+import ghidracalculator.CalculatorModel;
 
 /**
  * Calculator UI
- * 
+ *
  * This class handles all UI building for the calculator.
  */
-public class CalculatorUI extends JPanel{
+public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorModelListener{
 	
 	private CalculatorProvider provider;
-	private AddressNavigator addressNavigator;
 	private CalculatorLogic calculatorLogic;
 	
 	// GUI Components
@@ -36,9 +36,6 @@ public class CalculatorUI extends JPanel{
 	public JLabel markedValueLabel, markedAddressLabel;
 	private Map<String, JLabel> modeLabels, valueLabels;
 	
-	// Utility classes
-	private InputHandler inputHandler;
-	
 	/**
 	 * Constructor
 	 * @param provider The calculator provider instance
@@ -46,12 +43,13 @@ public class CalculatorUI extends JPanel{
 	public CalculatorUI(CalculatorProvider provider, CalculatorLogic calculatorLogic) {
 		this.provider = provider;
 		this.calculatorLogic = calculatorLogic;
-		this.addressNavigator = provider.getAddressNavigator();
-		this.inputHandler = provider.getInputHandler();
 		
 		// Initialize maps
 		modeLabels = new HashMap<>();
 		valueLabels = new HashMap<>();
+		
+		// Register as listener to the model
+		calculatorLogic.getModel().addCalculatorModelListener(this);
 
 		initializeUI();
 	}
@@ -148,7 +146,7 @@ public class CalculatorUI extends JPanel{
 		displayField.addKeyListener(new KeyListener() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				inputHandler.handleKeyPress(e);
+				handleKeyPress(e);
 			}
 			
 			@Override
@@ -164,7 +162,7 @@ public class CalculatorUI extends JPanel{
 		
 		// Add action listener for Enter key
 		displayField.addActionListener(e -> {
-			inputHandler.parseDisplayInput();
+			parseDisplayInput();
 		});
 		
 		panel.add(displayField, gbc);
@@ -391,51 +389,81 @@ public class CalculatorUI extends JPanel{
     }
 
 	/**
-     * Show context menu for the display field
-     */
-    public void showDisplayContextMenu(MouseEvent e) {
-        JPopupMenu popup = new JPopupMenu();
-        BigInteger currentValue = provider.getCalculatorLogic().getCurrentValue();
-        
-        // Jump to Address option (only if valid address)
-        if (addressNavigator.isValidAddress(currentValue)) {
-            JMenuItem jumpItem = new JMenuItem("Jump to Address");
-            jumpItem.setToolTipText("Navigate to 0x" + currentValue.toString(16).toUpperCase() + " in the listing");
-            jumpItem.addActionListener(evt -> addressNavigator.jumpToCurrentAddress());
-            popup.add(jumpItem);
-        }
-        
-        // Copy Value option
-        JMenuItem copyItem = new JMenuItem("Copy Value");
-        copyItem.setToolTipText("Copy current value to clipboard");
-        copyItem.addActionListener(evt -> new InputHandler(provider, calculatorLogic).copyValueToClipboard());
-        popup.add(copyItem);
-        
-        // Paste Value option
-        JMenuItem pasteItem = new JMenuItem("Paste Value");
-        pasteItem.setToolTipText("Paste value from clipboard");
-        pasteItem.addActionListener(evt -> new InputHandler(provider, calculatorLogic).pasteValueFromClipboard());
-        popup.add(pasteItem);
-        
-        // Mark Value option
-        JMenuItem markValueItem = new JMenuItem("Mark Value");
-        markValueItem.addActionListener(evt -> provider.markCurrentValue());
-        popup.add(markValueItem);
-        
-        // Recall Value option
-        if (provider.hasMarkedValue()) {
-            JMenuItem recallValueItem = new JMenuItem("Recall Value");
-            recallValueItem.addActionListener(evt -> provider.recallMarkedValue());
-            popup.add(recallValueItem);
-        }
-        
-        // Only show popup if it has items
-        if (popup.getComponentCount() > 0) {
-            popup.show(provider.getDisplayField(), e.getX(), e.getY());
-        }
-    }
+	    * Show context menu for the display field
+	    */
+	   public void showDisplayContextMenu(MouseEvent e) {
+	       JPopupMenu popup = new JPopupMenu();
+	       BigInteger currentValue = provider.getCalculatorLogic().getCurrentValue();
+	       
+	       // Jump to Address option (only if valid address)
+	       if (isValidAddress(currentValue)) {
+	           JMenuItem jumpItem = new JMenuItem("Jump to Address");
+	           jumpItem.setToolTipText("Navigate to 0x" + currentValue.toString(16).toUpperCase() + " in the listing");
+	           jumpItem.addActionListener(evt -> provider.navigateToAddress(currentValue));
+	           popup.add(jumpItem);
+	       }
+	       
+	       // Copy Value option
+	       JMenuItem copyItem = new JMenuItem("Copy Value");
+	       copyItem.setToolTipText("Copy current value to clipboard");
+	       copyItem.addActionListener(evt -> copyValueToClipboard());
+	       popup.add(copyItem);
+	       
+	       // Paste Value option
+	       JMenuItem pasteItem = new JMenuItem("Paste Value");
+	       pasteItem.setToolTipText("Paste value from clipboard");
+	       pasteItem.addActionListener(evt -> pasteValueFromClipboard());
+	       popup.add(pasteItem);
+	       
+	       // Mark Value option
+	       JMenuItem markValueItem = new JMenuItem("Mark Value");
+	       markValueItem.addActionListener(evt -> provider.markCurrentValue());
+	       popup.add(markValueItem);
+	       
+	       // Recall Value option
+	       if (provider.hasMarkedValue()) {
+	           JMenuItem recallValueItem = new JMenuItem("Recall Value");
+	           recallValueItem.addActionListener(evt -> provider.recallMarkedValue());
+	           popup.add(recallValueItem);
+	       }
+	       
+	       // Only show popup if it has items
+	       if (popup.getComponentCount() > 0) {
+	           popup.show(provider.getDisplayField(), e.getX(), e.getY());
+	       }
+	   }
 
-	    /**
+	/**
+     * Parse the input from the display field and update the calculator value
+     */
+    public void parseDisplayInput() {
+        String input = provider.getDisplayField().getText().trim();
+        if (input.isEmpty()) {
+            return;
+        }
+
+        try {
+            BigInteger value = provider.parseInputValue(input);
+            provider.getCalculatorLogic().setCurrentValue(value);
+            provider.getCalculatorLogic().setNewNumber(true);
+            provider.getUI().updateDisplay();
+        } catch (NumberFormatException e) {
+            // Invalid input, show error briefly
+            String originalText = provider.getDisplayField().getText();
+            provider.getDisplayField().setText("ERROR");
+            provider.getDisplayField().setBackground(GThemeDefaults.Colors.Palette.PINK);
+            
+            // Reset after 1 second
+            Timer timer = new Timer(1000, evt -> {
+                provider.getDisplayField().setText(originalText);
+                provider.getDisplayField().setBackground(GThemeDefaults.Colors.BACKGROUND);
+            });
+            timer.setRepeats(false);
+            timer.start();
+        }
+    }	
+
+	/**
      * Update the display with current value in all number bases
      */
     public void updateDisplay() {
@@ -477,24 +505,151 @@ public class CalculatorUI extends JPanel{
     }
     
     /**
-     * Get address information for the current value
+        * Get address information for the current value
+        */
+       private String getAddressInfo(BigInteger value) {
+           try {
+               if (provider.plugin.getCurrentProgram() == null) {
+                   return "No program loaded";
+               }
+               
+               var addressFactory = provider.plugin.getCurrentProgram().getAddressFactory();
+               var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+               
+               if (provider.plugin.getCurrentProgram().getMemory().contains(address)) {
+                   return String.format("Valid address: %s", address.toString());
+               } else {
+                   return "Address not in program memory";
+               }
+           } catch (Exception e) {
+               return "Invalid address format";
+           }
+       }
+       
+       /**
+        * Check if a value represents a valid address in the current program
+        */
+       private boolean isValidAddress(BigInteger value) {
+           try {
+               if (provider.plugin.getCurrentProgram() == null) {
+                   return false;
+               }
+               
+               var addressFactory = provider.plugin.getCurrentProgram().getAddressFactory();
+               var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+               
+               return provider.plugin.getCurrentProgram().getMemory().contains(address);
+           } catch (Exception e) {
+               return false;
+           }
+       }
+
+	/**
+     * Copy current value to clipboard
      */
-    private String getAddressInfo(BigInteger value) {
+    public void copyValueToClipboard() {
         try {
-            if (provider.plugin.getCurrentProgram() == null) {
-                return "No program loaded";
-            }
+            String value = provider.getDisplayField().getText();
+            StringSelection selection = new StringSelection(value);
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
             
-            var addressFactory = provider.plugin.getCurrentProgram().getAddressFactory();
-            var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
-            
-            if (provider.plugin.getCurrentProgram().getMemory().contains(address)) {
-                return String.format("Valid address: %s", address.toString());
-            } else {
-                return "Address not in program memory";
-            }
-        } catch (Exception e) {
-            return "Invalid address format";
+            // Show brief feedback
+            provider.getDisplayField().setToolTipText("Value copied to clipboard: " + value);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(provider.getComponent(), 
+                "Error copying to clipboard: " + ex.getMessage(), 
+                "Copy Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
+    }
+    
+    /**
+     * Paste value from clipboard
+     */
+    public void pasteValueFromClipboard() {
+        try {
+            String clipboardText = (String) Toolkit.getDefaultToolkit()
+                .getSystemClipboard().getData(DataFlavor.stringFlavor);
+            
+            if (clipboardText != null && !clipboardText.trim().isEmpty()) {
+                provider.getDisplayField().setText(clipboardText.trim());
+                provider.parseInputValue(clipboardText.trim());
+                parseDisplayInput();
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(provider.getComponent(), 
+                "Error pasting from clipboard: " + ex.getMessage(), 
+                "Paste Error", 
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+	/**
+     * Handle keyboard input for calculator operations
+     */
+    public void handleKeyPress(KeyEvent e) {
+        int keyCode = e.getKeyCode();
+        char keyChar = e.getKeyChar();
+        
+        // Handle special keys
+        switch (keyCode) {
+            case KeyEvent.VK_ENTER:
+                parseDisplayInput();
+                e.consume();
+                return;
+            case KeyEvent.VK_ESCAPE:
+                calculatorLogic.clearCalculator();
+                e.consume();
+                return;
+            case KeyEvent.VK_BACK_SPACE:
+            case KeyEvent.VK_DELETE:
+                // Allow normal backspace/delete behavior
+                return;
+        }
+        
+        // Handle operation keys
+        if (keyChar == '+') {
+            calculatorLogic.setOperation("+");
+            e.consume();
+        } else if (keyChar == '-') {
+            calculatorLogic.setOperation("-");
+            e.consume();
+        } else if (keyChar == '*') {
+            calculatorLogic.setOperation("*");
+            e.consume();
+        } else if (keyChar == '/') {
+            calculatorLogic.setOperation("/");
+            e.consume();
+        } else if (keyChar == '=') {
+            calculatorLogic.performEquals();
+            e.consume();
+        } else if (keyChar == '&') {
+            calculatorLogic.setOperation("AND");
+            e.consume();
+        } else if (keyChar == '|') {
+            calculatorLogic.setOperation("OR");
+            e.consume();
+        } else if (keyChar == '^') {
+            calculatorLogic.setOperation("XOR");
+            e.consume();
+        } else if (keyChar == '~') {
+            calculatorLogic.bitwiseNot();
+            e.consume();
+        }
+        // For other characters, let the text field handle them normally (This is kind of broken and clunky)
+    }
+    
+    /**
+     * Handle model changes and update the UI accordingly
+     */
+    @Override
+    public void modelChanged(CalculatorModel.CalculatorModelEvent event) {
+        // Update the display when the model changes
+        updateDisplay();
+    }
+    
+    @Override
+    public void modelError(CalculatorModel.CalculatorModelErrorEvent event) {
+        JOptionPane.showMessageDialog(this, event.getErrorMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

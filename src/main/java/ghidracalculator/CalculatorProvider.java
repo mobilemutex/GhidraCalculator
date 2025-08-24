@@ -10,14 +10,17 @@ import docking.action.DockingAction;
 import docking.action.ToolBarData;
 import generic.theme.GThemeDefaults;
 import ghidra.app.services.ConsoleService;
+import ghidra.app.services.GoToService;
+import ghidra.program.model.address.Address;
+import ghidra.program.model.address.AddressFactory;
+import ghidra.program.util.ProgramLocation;
 import ghidracalculator.resources.GhidraCalcIcons;
 import resources.ResourceManager;
-import ghidracalculator.util.*;
 import ghidracalculator.ui.CalculatorUI;
 
 /**
  * Calculator Provider
- * 
+ *
  * This class provides the main calculator interface.
  */
 public class CalculatorProvider extends ComponentProvider {
@@ -28,8 +31,6 @@ public class CalculatorProvider extends ComponentProvider {
 	
 	// Utility classes
 	private CalculatorLogic calculatorLogic;
-	public AddressNavigator addressNavigator;
-	private InputHandler inputHandler;
 	
 	// GUI Components
 	private JTextField displayField;
@@ -51,8 +52,6 @@ public class CalculatorProvider extends ComponentProvider {
 		// Initialize utility classes
 		ConsoleService consoleService = this.plugin.getTool().getService(ConsoleService.class);
 		calculatorLogic = new CalculatorLogic(this, consoleService);
-		addressNavigator = new AddressNavigator(this, calculatorLogic);
-		inputHandler = new InputHandler(this, calculatorLogic);
 
 		// Build UI
 		buildPanel();
@@ -75,17 +74,11 @@ public class CalculatorProvider extends ComponentProvider {
 		return calculatorLogic;
 	}
 
-	public AddressNavigator getAddressNavigator() {
-		return addressNavigator;
-	}
 
 	public JTextField getDisplayField() {
 		return displayField;
 	}
 
-	public InputHandler getInputHandler() {
-		return inputHandler;
-	}
 
 	private void buildPanel() {
 		// Create the main component
@@ -132,7 +125,6 @@ public class CalculatorProvider extends ComponentProvider {
 		modeLabels.get(mode).setBorder(BorderFactory.createMatteBorder(0,3,0,0,GThemeDefaults.Colors.Palette.BLUE));
         
         calculatorLogic.setInputMode(mode);
-        ui.updateDisplay();
     }
 
 	public void setValueLabels(BigInteger currentValue, String sign) {
@@ -154,7 +146,6 @@ public class CalculatorProvider extends ComponentProvider {
 	 */
 	public void calculateDistanceToMarked(long currentAddress) {
 		calculatorLogic.calculateDistanceToMarked(currentAddress);
-		ui.updateDisplay();
 		
 		// Show detailed information
 		long markedAddress = calculatorLogic.getMarkedAddress();
@@ -195,7 +186,6 @@ public class CalculatorProvider extends ComponentProvider {
 	 */
 	public void recallMarkedValue() {
 		calculatorLogic.recallMarkedValue();
-		ui.updateDisplay();
 	}
 
 	/**
@@ -204,7 +194,6 @@ public class CalculatorProvider extends ComponentProvider {
 	public void addValue(BigInteger value) {
 		calculatorLogic.setCurrentValue(value);
 		calculatorLogic.setNewNumber(true);
-		ui.updateDisplay();
 	}
 
 	/**
@@ -298,7 +287,43 @@ public class CalculatorProvider extends ComponentProvider {
 	 * Navigate to an address if the value represents a valid address
 	 */
 	public void navigateToAddress(BigInteger value) {
-		addressNavigator.navigateToAddress(value);
+		// Get the GoToService from the tool
+		GoToService goToService = plugin.getTool().getService(GoToService.class);
+		
+		// Check if we have an active program
+		if (plugin.getCurrentProgram() == null) {
+			// Notify UI of error through model/listener pattern
+			calculatorLogic.getModel().notifyError("No program loaded. Cannot navigate to address.");
+			return;
+		}
+		
+		try {
+			// Convert value to address
+			AddressFactory addressFactory = plugin.getCurrentProgram().getAddressFactory();
+			Address address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+			
+			// Check if address is valid in the program
+			if (!plugin.getCurrentProgram().getMemory().contains(address)) {
+				// Notify UI of error through model/listener pattern
+				calculatorLogic.getModel().notifyError(
+					String.format("Address 0x%s is not valid in the current program.",
+						value.toString(16).toUpperCase()));
+				return;
+			}
+			
+			// Navigate to the address
+			if (goToService != null) {
+				ProgramLocation location = new ProgramLocation(plugin.getCurrentProgram(), address);
+				goToService.goTo(location);
+			} else {
+				// Notify UI of error through model/listener pattern
+				calculatorLogic.getModel().notifyError("GoTo service not available.");
+			}
+		} catch (Exception e) {
+			// Notify UI of error through model/listener pattern
+			calculatorLogic.getModel().notifyError(
+				String.format("Error navigating to address: %s", e.getMessage()));
+		}
 	}
 
 	/**
