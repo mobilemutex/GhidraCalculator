@@ -9,12 +9,10 @@ import ghidra.app.services.ConsoleService;
  */
 public class CalculatorLogic {
     private CalculatorProvider provider;
-    private ConsoleService consoleService;
     private CalculatorModel model;
     
-    public CalculatorLogic(CalculatorProvider provider, ConsoleService consoleService) {
+    public CalculatorLogic(CalculatorProvider provider) {
         this.provider = provider;
-        this.consoleService = consoleService;
         this.model = new CalculatorModel();
     }
     
@@ -372,7 +370,7 @@ public class CalculatorLogic {
 
             //Print results to console
             String message = String.format(
-                "Marked Value Operation:\n" +
+                "\nMarked Value Operation:\n" +
                 "Marked: 0x%s\n" +
                 "Current: 0x%s\n" +
                 "Operation: %s\n" +
@@ -383,6 +381,8 @@ public class CalculatorLogic {
                 result.toString(16).toUpperCase(),
                 result.toString(10)
             );
+
+            ConsoleService consoleService = provider.plugin.getTool().getService(ConsoleService.class);
             consoleService.println(message);
             
             return result;
@@ -411,12 +411,13 @@ public class CalculatorLogic {
 
             // Show detailed information
             String message = String.format(
-                "Distance Calculation:\n" +
+                "\nDistance Calculation:\n" +
                 "From: 0x%X\n" +
                 "To: 0x%X\n" +
                 "Distance: 0x%X (%d bytes)",
                 markedAddress, currentAddress, distance, distance);
 
+            ConsoleService consoleService = provider.plugin.getTool().getService(ConsoleService.class);
 			consoleService.println(message);
         }
     }

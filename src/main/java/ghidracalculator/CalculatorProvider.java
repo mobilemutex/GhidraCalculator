@@ -7,7 +7,6 @@ import javax.swing.*;
 import docking.ComponentProvider;
 import docking.action.DockingAction;
 import docking.action.ToolBarData;
-import ghidra.app.services.ConsoleService;
 import ghidra.app.services.GoToService;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressFactory;
@@ -41,9 +40,7 @@ public class CalculatorProvider extends ComponentProvider {
 		setTitle("Calculator");
 		setWindowMenuGroup("Calculator");
 		
-		// Initialize utility classes
-		ConsoleService consoleService = this.plugin.getTool().getService(ConsoleService.class);
-		calculatorLogic = new CalculatorLogic(this, consoleService);
+		calculatorLogic = new CalculatorLogic(this);
 
 		// Build UI
 		ui = new CalculatorUI(this.plugin, this, calculatorLogic);
