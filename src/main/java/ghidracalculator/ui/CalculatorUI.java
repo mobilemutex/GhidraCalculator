@@ -584,6 +584,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	   
 	/**
 	* Update the marked value and address labels
+	* Right now, these just always display as Hex
 	*/
 	private void updateMarkedLabels() {
 		// Update marked value label

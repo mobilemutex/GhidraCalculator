@@ -32,6 +32,8 @@ public class CalculatorProvider extends ComponentProvider {
 	/**
 	 * Constructor
 	 * @param plugin The calculator plugin instance
+	 * @param owner The owner of this provider
+	 * @throws IllegalArgumentException if plugin is null or owner is null/empty
 	 */
 	public CalculatorProvider(CalculatorPlugin plugin, String owner) {
 		super(plugin.getTool(), owner, owner);
@@ -82,8 +84,15 @@ public class CalculatorProvider extends ComponentProvider {
 
 	/**
 	 * Navigate to an address if the value represents a valid address
+	 * @param value The address value to navigate to
+	 * @throws IllegalArgumentException if value is null
 	 */
 	public void navigateToAddress(BigInteger value) {
+		if (value == null) {
+			calculatorLogic.getModel().notifyError("Address value cannot be null.");
+			return;
+		}
+		
 		// Get the GoToService from the tool
 		GoToService goToService = plugin.getTool().getService(GoToService.class);
 		
@@ -125,8 +134,17 @@ public class CalculatorProvider extends ComponentProvider {
 
 	/**
 	 * Add a value to the history
+	 * @param value The value to add to history
+	 * @param operation The operation performed
+	 * @throws IllegalArgumentException if value is null or operation is null
 	 */
 	public void addToHistory(BigInteger value, String operation) {
+		if (value == null) {
+			throw new IllegalArgumentException("Value cannot be null");
+		}
+		if (operation == null) {
+			throw new IllegalArgumentException("Operation cannot be null");
+		}
 		plugin.getHistoryProvider().addToHistory(value, operation);
 	}
 }
