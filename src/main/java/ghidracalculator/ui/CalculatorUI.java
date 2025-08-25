@@ -457,7 +457,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
         }
 
         try {
-            BigInteger value = provider.parseInputValue(input);
+            BigInteger value = parseInputValue(input);
             calculatorLogic.setCurrentValue(value);
             calculatorLogic.setNewNumber(true);
             updateDisplay();
@@ -476,6 +476,43 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             timer.start();
         }
     }
+
+	/**
+	 * Parse input value based on prefix or current input mode
+	 */
+	public BigInteger parseInputValue(String input) throws NumberFormatException {
+		// Remove common prefixes and determine base
+		if (input.startsWith("0x") || input.startsWith("0X")) {
+			return new BigInteger(input.substring(2), 16);
+		} else if (input.startsWith("0b") || input.startsWith("0B")) {
+			return new BigInteger(input.substring(2), 2);
+		} else if (input.startsWith("0") && input.length() > 1 && input.matches("0[0-7]+")) {
+			return new BigInteger(input.substring(1), 8);
+		} else {
+			// Use current input mode
+			switch (calculatorLogic.getInputMode()) {
+				case "HEX":
+					// Remove any 0x prefix if present
+					String hexInput = input.startsWith("0x") || input.startsWith("0X") ?
+						input.substring(2) : input;
+					return new BigInteger(hexInput, 16);
+				case "DEC":
+					return new BigInteger(input, 10);
+				case "BIN":
+					// Remove any 0b prefix if present
+					String binInput = input.startsWith("0b") || input.startsWith("0B") ?
+						input.substring(2) : input;
+					return new BigInteger(binInput, 2);
+				case "OCT":
+					// Remove any leading 0 if present
+					String octInput = input.startsWith("0") && input.length() > 1 ?
+						input.substring(1) : input;
+					return new BigInteger(octInput, 8);
+				default:
+					return new BigInteger(input, 10);
+			}
+		}
+	}
 
 	public void setCurrentMode(String mode) {
 		Map<String, JLabel> modeLabels = getModeLabels();
@@ -636,7 +673,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             
             if (clipboardText != null && !clipboardText.trim().isEmpty()) {
                 displayField.setText(clipboardText.trim());
-                provider.parseInputValue(clipboardText.trim());
+                parseInputValue(clipboardText.trim());
                 parseDisplayInput();
             }
         } catch (Exception ex) {

@@ -394,8 +394,9 @@ public class CalculatorLogic {
      * Calculate distance from current address to marked address
      */
     public void calculateDistanceToMarked(long currentAddress) {
-        if (model.getMarkedAddress() != -1) {
-            long distance = Math.abs(currentAddress - model.getMarkedAddress());
+        long markedAddress = model.getMarkedAddress();
+        if (markedAddress != -1) {
+            long distance = Math.abs(currentAddress - markedAddress);
             BigInteger distanceValue = BigInteger.valueOf(distance);
             
             // Show result in calculator and display dialog
@@ -405,8 +406,18 @@ public class CalculatorLogic {
             // Add to history
             String operationString = String.format("%s - %s",
                 BigInteger.valueOf(currentAddress).toString(16).toUpperCase(),
-                BigInteger.valueOf(model.getMarkedAddress()).toString(16).toUpperCase());
+                BigInteger.valueOf(markedAddress).toString(16).toUpperCase());
             provider.addToHistory(model.getCurrentValue(), operationString);
+
+            // Show detailed information
+            String message = String.format(
+                "Distance Calculation:\n" +
+                "From: 0x%X\n" +
+                "To: 0x%X\n" +
+                "Distance: 0x%X (%d bytes)",
+                markedAddress, currentAddress, distance, distance);
+
+			consoleService.println(message);
         }
     }
     
