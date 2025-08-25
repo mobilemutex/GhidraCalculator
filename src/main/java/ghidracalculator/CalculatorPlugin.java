@@ -78,17 +78,17 @@ public class CalculatorPlugin extends ProgramPlugin {
 	 * Create context menu actions for integration with Ghidra's listing windows
 	 */
 	private void createContextMenuActions() {
-		addAddressAction = new AddAddressAction(this, CALC_ADD);
-		addMemoryValueAction = new AddMemoryAction(this, CALC_ADD);
+		addAddressAction = new AddAddressAction(this, provider.getCalculatorLogic(), CALC_ADD);
+		addMemoryValueAction = new AddMemoryAction(this, provider.getCalculatorLogic(), CALC_ADD);
 		markAddressAction = new MarkAddressAction(this, CALC_MARK);
 		calculateDistanceAction = new CalculateDistanceAction(this, CALC_ADDRESS);
-		addScalarAction = new AddScalarAction(this, "Add scalar operand to Calculator", CALC_ADD);
-		markScalarAction = new MarkScalarAction(this, "Mark scalar operand", CALC_MARK);
+		addScalarAction = new AddScalarAction(this, provider.getCalculatorLogic(), "Add scalar operand to Calculator", CALC_ADD);
+		markScalarAction = new MarkScalarAction(this, provider.getCalculatorLogic(), "Mark scalar operand", CALC_MARK);
 		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, provider.getCalculatorLogic(), "Add to marked scalar operand", "add", CALC_SCALAR);
 		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, provider.getCalculatorLogic(), "Subtract from marked scalar operand", "subtract", CALC_SCALAR);
 		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, provider.getCalculatorLogic(), "XOR with marked scalar operand", "xor", CALC_SCALAR);
-		addDecompilerConstant = new AddDecompilerConstantAction(this);
-		markDecompilerConstant = new MarkDecompilerConstantAction(this);
+		addDecompilerConstant = new AddDecompilerConstantAction(this, provider.getCalculatorLogic());
+		markDecompilerConstant = new MarkDecompilerConstantAction(this, provider.getCalculatorLogic());
 
 		tool.addAction(addAddressAction);
 		tool.addAction(addMemoryValueAction);

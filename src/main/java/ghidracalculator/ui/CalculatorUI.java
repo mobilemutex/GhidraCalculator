@@ -431,13 +431,13 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	       
 	       // Mark Value option
 	       JMenuItem markValueItem = new JMenuItem("Mark Value");
-	       markValueItem.addActionListener(evt -> provider.markCurrentValue());
+	       markValueItem.addActionListener(evt -> calculatorLogic.markCurrentValue());
 	       popup.add(markValueItem);
 	       
 	       // Recall Value option
-	       if (provider.hasMarkedValue()) {
+	       if (calculatorLogic.hasMarkedValue()) {
 	           JMenuItem recallValueItem = new JMenuItem("Recall Value");
-	           recallValueItem.addActionListener(evt -> provider.recallMarkedValue());
+	           recallValueItem.addActionListener(evt -> calculatorLogic.recallMarkedValue());
 	           popup.add(recallValueItem);
 	       }
 	       
@@ -502,45 +502,70 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	}
 
 	/**
-     * Update the display with current value in all number bases
-     */
-    public void updateDisplay() {
-        // Update main display field based on input mode
-        String displayText;
-        String sign;
-        BigInteger currentValue = calculatorLogic.getCurrentValue();
+	* Update the display with current value in all number bases
+	*/
+	public void updateDisplay() {
+		// Update main display field based on input mode
+		String displayText;
+		String sign;
+		BigInteger currentValue = calculatorLogic.getCurrentValue();
 
-        if (currentValue.signum() == -1) {
-            sign = "-";
-        } else {
-            sign = "";
-        }
+		if (currentValue.signum() == -1) {
+			sign = "-";
+		} else {
+			sign = "";
+		}
 
-        switch (calculatorLogic.getInputMode()) {
-            case "HEX":
-                displayText = sign + "0x" + currentValue.abs().toString(16).toUpperCase();
-                break;
-            case "DEC":
-                displayText = currentValue.toString(10);
-                break;
-            case "BIN":
-                displayText = sign + "0b" + currentValue.abs().toString(2);
-                break;
-            case "OCT":
-                displayText = sign + "0" + currentValue.abs().toString(8);
-                break;
-            default:
-                displayText = currentValue.toString(16).toUpperCase();
-        }
-        displayField.setText(displayText);
-        
-        // Update multi-base labels
-        setValueLabels(currentValue, sign);
-        
-        // Update address validation info in tooltip
-        String addressInfo = getAddressInfo(currentValue);
-        displayField.setToolTipText(addressInfo);
-    }
+		switch (calculatorLogic.getInputMode()) {
+			case "HEX":
+				displayText = sign + "0x" + currentValue.abs().toString(16).toUpperCase();
+				break;
+			case "DEC":
+				displayText = currentValue.toString(10);
+				break;
+			case "BIN":
+				displayText = sign + "0b" + currentValue.abs().toString(2);
+				break;
+			case "OCT":
+				displayText = sign + "0" + currentValue.abs().toString(8);
+				break;
+			default:
+				displayText = currentValue.toString(16).toUpperCase();
+	       }
+		displayField.setText(displayText);
+		
+		// Update multi-base labels
+		setValueLabels(currentValue, sign);
+		
+		// Update marked value and address labels
+		updateMarkedLabels();
+		
+		// Update address validation info in tooltip
+		String addressInfo = getAddressInfo(currentValue);
+		displayField.setToolTipText(addressInfo);
+	}
+	   
+	/**
+	* Update the marked value and address labels
+	*/
+	private void updateMarkedLabels() {
+		// Update marked value label
+		BigInteger markedValue = calculatorLogic.getMarkedValue();
+		if (markedValue != null) {
+			String sign = markedValue.signum() == -1 ? "-" : "";
+			markedValueLabel.setText("Marked Value: " + sign + "0x" + markedValue.abs().toString(16).toUpperCase());
+		} else {
+			markedValueLabel.setText("Marked Value: None");
+		}
+		
+		// Update marked address label
+		long markedAddress = calculatorLogic.getMarkedAddress();
+		if (markedAddress != -1) {
+			markedAddressLabel.setText("Marked Address: 0x" + Long.toHexString(markedAddress).toUpperCase());
+		} else {
+			markedAddressLabel.setText("Marked Address: None");
+		}
+	}
     
     /**
 	* Get address information for the current value

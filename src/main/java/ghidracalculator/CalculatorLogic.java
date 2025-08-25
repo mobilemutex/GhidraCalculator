@@ -242,6 +242,14 @@ public class CalculatorLogic {
 			return;
 		}
 	}
+
+    /**
+	 * Add a value to the calculator
+	 */
+	public void addValue(BigInteger value) {
+		setCurrentValue(value);
+		setNewNumber(true);
+	}
     
     /**
      * Flip sign of current value

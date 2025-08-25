@@ -29,9 +29,6 @@ public class CalculatorProvider extends ComponentProvider {
 	
 	// Utility classes
 	private CalculatorLogic calculatorLogic;
-	
-	// Calculator state
-	// State variables are now managed by CalculatorLogic
 
 	/**
 	 * Constructor
@@ -65,14 +62,9 @@ public class CalculatorProvider extends ComponentProvider {
 		return mainPanel;
 	}
 
-	public CalculatorUI getUI() {
-		return ui;
-	}
-
 	public CalculatorLogic getCalculatorLogic() {
 		return calculatorLogic;
 	}
-
 
 	/**
 	 * Create toolbar actions for the calculator
@@ -83,23 +75,12 @@ public class CalculatorProvider extends ComponentProvider {
 			@Override
 			public void actionPerformed(docking.ActionContext context) {
 				calculatorLogic.clearCalculator();
-				clearMark();
+				calculatorLogic.clearMark();
 			}
 		};
 		clearAction.setDescription("Clear the calculator");
 		clearAction.setToolBarData(new ToolBarData(ResourceManager.loadImage("images/erase16.png"), null));
 		addLocalAction(clearAction);
-
-		// History window toggle action Not working, maybe ghidra doesnt allow toggling other providers?
-		// DockingAction historyAction = new DockingAction("Toggle History Window", plugin.getName()) {
-		// 	@Override
-		// 	public void actionPerformed(docking.ActionContext context) {
-		// 		plugin.getHistoryProvider().toggleHistoryWindow();
-		// 	}
-		// };
-		// historyAction.setDescription("Show/Hide calculator history window");
-		// historyAction.setToolBarData(new ToolBarData(ResourceManager.loadImage("images/history.png"), null));
-		// addLocalAction(historyAction);
 	}
 
 	/**
@@ -123,74 +104,6 @@ public class CalculatorProvider extends ComponentProvider {
 			ConsoleService consoleService = this.plugin.getTool().getService(ConsoleService.class);
 			consoleService.println(message);
 		}
-	}
-
-	/**
-	 * Mark the current value for later recall
-	 */
-	public void markCurrentValue() {
-		calculatorLogic.markCurrentValue();
-		// Update UI
-		BigInteger markedValue = calculatorLogic.getMarkedValue();
-		String sign;
-		if (markedValue.signum() == -1) {
-			sign = "-";
-		} else {
-			sign = "";
-		}
-
-		ui.markedValueLabel.setText("Marked Value: " + sign + "0x" + markedValue.abs().toString(16).toUpperCase());
-	}
-
-	/**
-	 * Recall the marked value
-	 */
-	public void recallMarkedValue() {
-		calculatorLogic.recallMarkedValue();
-	}
-
-	/**
-	 * Add a value to the calculator (used by context menu actions)
-	 */
-	public void addValue(BigInteger value) {
-		calculatorLogic.setCurrentValue(value);
-		calculatorLogic.setNewNumber(true);
-	}
-
-	/**
-	 * Mark an address for distance calculation
-	 */
-	public void markAddress(long address) {
-		calculatorLogic.setMarkedAddress(address);
-		ui.markedAddressLabel.setText("Marked Address: 0x" + Long.toHexString(address).toUpperCase());
-	}
-
-	/**
-	 * Mark a value for comparison operations
-	 */
-	public void markValueForComparison(BigInteger value) {
-		calculatorLogic.markValueForComparison(value);
-		// Update UI
-		BigInteger markedValue = calculatorLogic.getMarkedValue();
-		String sign;
-
-		if (markedValue.signum() == -1) {
-			sign = "-";
-		} else {
-			sign = "";
-		}
-
-		ui.markedValueLabel.setText("Marked Value: " + sign + "0x" + markedValue.abs().toString(16).toUpperCase());
-	}
-
-	/**
-	 * Clear marked values and addresses
-	 */
-	private void clearMark() {
-		calculatorLogic.clearMark();
-		// Update UI
-		ui.markedValueLabel.setText("Marked Value: None");
-		ui.markedAddressLabel.setText("Marked Address: None");
 	}
 
 	/**
@@ -228,20 +141,6 @@ public class CalculatorProvider extends ComponentProvider {
 					return new BigInteger(input, 10);
 			}
 		}
-	}
-
-	/**
-	 * Check if a value is marked for comparison
-	 */
-	public boolean hasMarkedValue() {
-		return calculatorLogic.hasMarkedValue();
-	}
-	
-	/**
-	 * Check if an address is marked
-	 */
-	public boolean hasMarkedAddress() {
-		return calculatorLogic.hasMarkedAddress();
 	}
 
 	/**

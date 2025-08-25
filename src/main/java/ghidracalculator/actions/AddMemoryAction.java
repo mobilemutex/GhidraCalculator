@@ -9,14 +9,17 @@ import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryAccessException;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public class AddMemoryAction extends ListingContextAction {
     protected final CalculatorPlugin plugin;
+    protected CalculatorLogic logic;
 
-    public AddMemoryAction(CalculatorPlugin plugin, String groupName) {
+    public AddMemoryAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String groupName) {
         super("Add Memory Value to Calculator", plugin.getName());
         this.plugin = plugin;
+        this.logic = calculatorLogic;
         setPopupMenuData(new MenuData(new String[] { "Calculator", ""}, groupName));
     }
 
@@ -39,12 +42,12 @@ public class AddMemoryAction extends ListingContextAction {
                     for (int i = Math.min(bytesRead, 4) - 1; i >= 0; i--) {
                         value = value.shiftLeft(8).or(BigInteger.valueOf(bytes[i] & 0xFF));
                     }
-                    plugin.getProvider().addValue(value);
+                    logic.addValue(value);
                 }
             } catch (MemoryAccessException e) {
                 // If we can't read memory, just use the address value?
                 BigInteger addressValue = new BigInteger(address.toString(false), 16);
-                plugin.getProvider().addValue(addressValue);
+                logic.addValue(addressValue);
             }
         }
         return;

@@ -167,9 +167,7 @@ public class HistoryProvider extends ComponentProvider{
 		int selectedIndex = historyList.getSelectedIndex();
 		if (selectedIndex >= 0 && selectedIndex < historyValues.size()) {
 			BigInteger value = historyValues.get(selectedIndex);
-			plugin.getProvider().getCalculatorLogic().setCurrentValue(value);
-            plugin.getProvider().getCalculatorLogic().setNewNumber(true);
-			plugin.getProvider().getUI().updateDisplay();
+			plugin.getProvider().getCalculatorLogic().addValue(value);
 		}
 	}
 

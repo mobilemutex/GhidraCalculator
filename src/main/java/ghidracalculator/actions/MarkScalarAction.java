@@ -5,18 +5,19 @@ import java.math.BigInteger;
 import ghidra.app.context.ListingActionContext;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.scalar.Scalar;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public class MarkScalarAction extends AbstractScalarAction {
 
-    public MarkScalarAction(CalculatorPlugin plugin, String actionName, String groupName) {
-        super(plugin, actionName, groupName, false);
+    public MarkScalarAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String actionName, String groupName) {
+        super(plugin, calculatorLogic, actionName, groupName, false);
     }
 
     @Override
     public void actionPerformed(ListingActionContext context) {
         BigInteger value = BigInteger.valueOf(scalarOp.getValue());
-        plugin.getProvider().markValueForComparison(value);
+        logic.markValueForComparison(value);
     }
 
     @Override
