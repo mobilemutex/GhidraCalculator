@@ -1,14 +1,12 @@
 package ghidracalculator;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import javax.swing.*;
 
 import docking.ComponentProvider;
 import docking.action.DockingAction;
 import docking.action.ToolBarData;
-import generic.theme.GThemeDefaults;
 import ghidra.app.services.ConsoleService;
 import ghidra.app.services.GoToService;
 import ghidra.program.model.address.Address;
@@ -32,9 +30,6 @@ public class CalculatorProvider extends ComponentProvider {
 	// Utility classes
 	private CalculatorLogic calculatorLogic;
 	
-	// GUI Components
-	private JTextField displayField;
-	
 	// Calculator state
 	// State variables are now managed by CalculatorLogic
 
@@ -54,11 +49,15 @@ public class CalculatorProvider extends ComponentProvider {
 		calculatorLogic = new CalculatorLogic(this, consoleService);
 
 		// Build UI
-		buildPanel();
+		ui = new CalculatorUI(this.plugin, this, calculatorLogic);
+		mainPanel = ui.getComponent();
+		setDefaultWindowPosition(docking.WindowPosition.RIGHT);
 
 		// Add toolbar actions
 		createActions();
 		setIcon(GhidraCalcIcons.GHIDRACALC_ICON);
+
+		setVisible(true);
 	}
 
 	@Override
@@ -74,19 +73,6 @@ public class CalculatorProvider extends ComponentProvider {
 		return calculatorLogic;
 	}
 
-
-	public JTextField getDisplayField() {
-		return displayField;
-	}
-
-
-	private void buildPanel() {
-		// Create the main component
-		ui = new CalculatorUI(this, calculatorLogic);
-		mainPanel = ui.getComponent();
-		setDefaultWindowPosition(docking.WindowPosition.RIGHT);
-		setVisible(true);
-	}
 
 	/**
 	 * Create toolbar actions for the calculator
@@ -114,31 +100,6 @@ public class CalculatorProvider extends ComponentProvider {
 		// historyAction.setDescription("Show/Hide calculator history window");
 		// historyAction.setToolBarData(new ToolBarData(ResourceManager.loadImage("images/history.png"), null));
 		// addLocalAction(historyAction);
-	}
-
-
-	public void setCurrentMode(String mode) {
-		Map<String, JLabel> modeLabels = ui.getModeLabels();
-
-        // Update highlighting
-        modeLabels.get(calculatorLogic.getInputMode()).setBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, GThemeDefaults.Colors.Viewport.UNEDITABLE_BACKGROUND));
-		modeLabels.get(mode).setBorder(BorderFactory.createMatteBorder(0,3,0,0,GThemeDefaults.Colors.Palette.BLUE));
-        
-        calculatorLogic.setInputMode(mode);
-    }
-
-	public void setValueLabels(BigInteger currentValue, String sign) {
-		 // Update multi-base labels
-        ui.hexValueLabel.setText(sign + "0x" + currentValue.abs().toString(16).toUpperCase());
-        ui.decValueLabel.setText(currentValue.toString(10));
-        ui.octValueLabel.setText(sign + "0" + currentValue.abs().toString(8));
-
-		// Binary Display: Pad to 4-bit alignment and add spaces
-        String binaryStr = currentValue.abs().toString(2);
-        int padLen = (4 - (binaryStr.length() % 4)) % 4;
-        String paddedBinary = "0".repeat(padLen) + binaryStr;
-        String binFormatted = paddedBinary.replaceAll("(.{4})", "$1 ").trim();
-        ui.binValueLabel.setText(sign + binFormatted);
 	}
 
 	/**

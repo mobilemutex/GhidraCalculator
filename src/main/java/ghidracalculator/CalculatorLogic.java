@@ -3,10 +3,6 @@ package ghidracalculator;
 import java.math.BigInteger;
 
 import ghidra.app.services.ConsoleService;
-import ghidra.app.services.GoToService;
-import ghidra.program.model.address.Address;
-import ghidra.program.model.address.AddressFactory;
-import ghidra.program.util.ProgramLocation;
 
 /**
  * Calculator Logic class to handle core arithmetic operations and state management
@@ -164,8 +160,6 @@ public class CalculatorLogic {
         // Add to history
         provider.addToHistory(result, operationString);
 
-        provider.getUI().updateDisplay();
-
         return result;
     }
 
@@ -247,8 +241,6 @@ public class CalculatorLogic {
 			// Invalid digit for current mode, ignore
 			return;
 		}
-		
-		provider.getUI().updateDisplay();
 	}
     
     /**
@@ -256,8 +248,6 @@ public class CalculatorLogic {
      */
     public void flipSign() {
         model.setCurrentValue(model.getCurrentValue().negate());
-
-        provider.getUI().updateDisplay();
     }
     
     /**
@@ -268,8 +258,6 @@ public class CalculatorLogic {
         model.setPreviousValue(BigInteger.ZERO);
         model.setCurrentOperation("");
         model.setNewNumber(true);
-
-        provider.getUI().updateDisplay();
     }
     
     /**
@@ -299,8 +287,6 @@ public class CalculatorLogic {
         String operationString = String.format("NOT %s",
             previousValue.toString(16).toUpperCase());
         provider.addToHistory(model.getCurrentValue(), operationString);
-
-        provider.getUI().updateDisplay();
     }
     
     /**
@@ -368,7 +354,6 @@ public class CalculatorLogic {
             // Show result in calculator
             model.setCurrentValue(result);
             model.setNewNumber(true);
-            provider.getUI().updateDisplay();
             
             // Add to history
             String operationString = String.format("%s %s %s",
@@ -379,18 +364,18 @@ public class CalculatorLogic {
 
             //Print results to console
             String message = String.format(
-    "Marked Value Operation:\n" +
-    "Marked: 0x%s\n" +
-    "Current: 0x%s\n" +
-    "Operation: %s\n" +
-    "Result: 0x%s (%s)",
-    model.getMarkedValue().toString(16).toUpperCase(),
-    model.getCurrentValue().toString(16).toUpperCase(),
-    operationSymbol,
-    result.toString(16).toUpperCase(),
-    result.toString(10)
-   );
-   consoleService.println(message);
+                "Marked Value Operation:\n" +
+                "Marked: 0x%s\n" +
+                "Current: 0x%s\n" +
+                "Operation: %s\n" +
+                "Result: 0x%s (%s)",
+                model.getMarkedValue().toString(16).toUpperCase(),
+                model.getCurrentValue().toString(16).toUpperCase(),
+                operationSymbol,
+                result.toString(16).toUpperCase(),
+                result.toString(10)
+            );
+            consoleService.println(message);
             
             return result;
         }

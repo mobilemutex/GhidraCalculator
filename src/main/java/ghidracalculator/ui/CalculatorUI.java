@@ -18,6 +18,7 @@ import generic.theme.GThemeDefaults;
 import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorProvider;
 import ghidracalculator.CalculatorModel;
+import ghidracalculator.CalculatorPlugin;
 
 /**
  * Calculator UI
@@ -26,6 +27,7 @@ import ghidracalculator.CalculatorModel;
  */
 public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorModelListener{
 	
+    private CalculatorPlugin plugin;
 	private CalculatorProvider provider;
 	private CalculatorLogic calculatorLogic;
 	
@@ -40,7 +42,9 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	 * Constructor
 	 * @param provider The calculator provider instance
 	 */
-	public CalculatorUI(CalculatorProvider provider, CalculatorLogic calculatorLogic) {
+	public CalculatorUI(CalculatorPlugin calculatorPlugin, CalculatorProvider provider, CalculatorLogic calculatorLogic) {
+        super(new BorderLayout());
+        this.plugin = calculatorPlugin;
 		this.provider = provider;
 		this.calculatorLogic = calculatorLogic;
 		
@@ -61,7 +65,11 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	public JComponent getComponent() {
 		return this;
 	}
-
+	
+	/**
+	 * Gets the display field
+	 * @return the display field
+	 */
 	public JTextField getDisplayField() {
 		return displayField;
 	}
@@ -69,7 +77,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	/**
 	 * Build the main calculator panel
 	 */
-	public JComponent initializeUI() {
+	private void initializeUI() {
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		
 		// Create display panel
@@ -83,9 +91,15 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		// Create increment panel
 		JPanel incrementPanel = createIncrementPanel();
 		mainPanel.add(incrementPanel, BorderLayout.SOUTH);
-		
-		return mainPanel;
-	}
+
+        add(mainPanel, BorderLayout.CENTER);
+        
+        // Initialize display with default values
+        updateDisplay();
+        
+        // Set initial mode highlighting to HEX
+        modeLabels.get("HEX").setBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, GThemeDefaults.Colors.Palette.BLUE));
+ }
 	
 	/**
 	 * Create the display panel with multi-base output
@@ -189,7 +203,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             label.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    provider.setCurrentMode(mode);
+                    setCurrentMode(mode);
                 }
             });
         }
@@ -393,7 +407,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	    */
 	   public void showDisplayContextMenu(MouseEvent e) {
 	       JPopupMenu popup = new JPopupMenu();
-	       BigInteger currentValue = provider.getCalculatorLogic().getCurrentValue();
+	       BigInteger currentValue = calculatorLogic.getCurrentValue();
 	       
 	       // Jump to Address option (only if valid address)
 	       if (isValidAddress(currentValue)) {
@@ -429,7 +443,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	       
 	       // Only show popup if it has items
 	       if (popup.getComponentCount() > 0) {
-	           popup.show(provider.getDisplayField(), e.getX(), e.getY());
+	           popup.show(displayField, e.getX(), e.getY());
 	       }
 	   }
 
@@ -437,31 +451,55 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
      * Parse the input from the display field and update the calculator value
      */
     public void parseDisplayInput() {
-        String input = provider.getDisplayField().getText().trim();
+        String input = displayField.getText().trim();
         if (input.isEmpty()) {
             return;
         }
 
         try {
             BigInteger value = provider.parseInputValue(input);
-            provider.getCalculatorLogic().setCurrentValue(value);
-            provider.getCalculatorLogic().setNewNumber(true);
-            provider.getUI().updateDisplay();
+            calculatorLogic.setCurrentValue(value);
+            calculatorLogic.setNewNumber(true);
+            updateDisplay();
         } catch (NumberFormatException e) {
             // Invalid input, show error briefly
-            String originalText = provider.getDisplayField().getText();
-            provider.getDisplayField().setText("ERROR");
-            provider.getDisplayField().setBackground(GThemeDefaults.Colors.Palette.PINK);
+            String originalText = displayField.getText();
+            displayField.setText("ERROR");
+            displayField.setBackground(GThemeDefaults.Colors.Palette.PINK);
             
             // Reset after 1 second
             Timer timer = new Timer(1000, evt -> {
-                provider.getDisplayField().setText(originalText);
-                provider.getDisplayField().setBackground(GThemeDefaults.Colors.BACKGROUND);
+                displayField.setText(originalText);
+                displayField.setBackground(GThemeDefaults.Colors.BACKGROUND);
             });
             timer.setRepeats(false);
             timer.start();
         }
-    }	
+    }
+
+	public void setCurrentMode(String mode) {
+		Map<String, JLabel> modeLabels = getModeLabels();
+
+        // Update highlighting
+        modeLabels.get(calculatorLogic.getInputMode()).setBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, GThemeDefaults.Colors.Viewport.UNEDITABLE_BACKGROUND));
+		modeLabels.get(mode).setBorder(BorderFactory.createMatteBorder(0,3,0,0,GThemeDefaults.Colors.Palette.BLUE));
+        
+        calculatorLogic.setInputMode(mode);
+    }
+
+	public void setValueLabels(BigInteger currentValue, String sign) {
+		 // Update multi-base labels
+        hexValueLabel.setText(sign + "0x" + currentValue.abs().toString(16).toUpperCase());
+        decValueLabel.setText(currentValue.toString(10));
+        octValueLabel.setText(sign + "0" + currentValue.abs().toString(8));
+
+		// Binary Display: Pad to 4-bit alignment and add spaces
+        String binaryStr = currentValue.abs().toString(2);
+        int padLen = (4 - (binaryStr.length() % 4)) % 4;
+        String paddedBinary = "0".repeat(padLen) + binaryStr;
+        String binFormatted = paddedBinary.replaceAll("(.{4})", "$1 ").trim();
+        binValueLabel.setText(sign + binFormatted);
+	}
 
 	/**
      * Update the display with current value in all number bases
@@ -470,7 +508,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
         // Update main display field based on input mode
         String displayText;
         String sign;
-        BigInteger currentValue = provider.getCalculatorLogic().getCurrentValue();
+        BigInteger currentValue = calculatorLogic.getCurrentValue();
 
         if (currentValue.signum() == -1) {
             sign = "-";
@@ -478,7 +516,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             sign = "";
         }
 
-        switch (provider.getCalculatorLogic().getInputMode()) {
+        switch (calculatorLogic.getInputMode()) {
             case "HEX":
                 displayText = sign + "0x" + currentValue.abs().toString(16).toUpperCase();
                 break;
@@ -494,36 +532,36 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             default:
                 displayText = currentValue.toString(16).toUpperCase();
         }
-        provider.getDisplayField().setText(displayText);
+        displayField.setText(displayText);
         
         // Update multi-base labels
-        provider.setValueLabels(currentValue, sign);
+        setValueLabels(currentValue, sign);
         
         // Update address validation info in tooltip
         String addressInfo = getAddressInfo(currentValue);
-        provider.getDisplayField().setToolTipText(addressInfo);
+        displayField.setToolTipText(addressInfo);
     }
     
     /**
-        * Get address information for the current value
-        */
-       private String getAddressInfo(BigInteger value) {
-           try {
-               if (provider.plugin.getCurrentProgram() == null) {
-                   return "No program loaded";
-               }
-               
-               var addressFactory = provider.plugin.getCurrentProgram().getAddressFactory();
-               var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
-               
-               if (provider.plugin.getCurrentProgram().getMemory().contains(address)) {
-                   return String.format("Valid address: %s", address.toString());
-               } else {
-                   return "Address not in program memory";
-               }
-           } catch (Exception e) {
-               return "Invalid address format";
-           }
+	* Get address information for the current value
+	*/
+	private String getAddressInfo(BigInteger value) {
+		try {
+			if (plugin.getCurrentProgram() == null) {
+				return "No program loaded";
+			}
+			
+			var addressFactory = plugin.getCurrentProgram().getAddressFactory();
+			var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+			
+			if (plugin.getCurrentProgram().getMemory().contains(address)) {
+				return String.format("Valid address: %s", address.toString());
+			} else {
+				return "Address not in program memory";
+			}
+		} catch (Exception e) {
+			return "Invalid address format";
+		}
        }
        
        /**
@@ -531,14 +569,14 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
         */
        private boolean isValidAddress(BigInteger value) {
            try {
-               if (provider.plugin.getCurrentProgram() == null) {
+               if (plugin.getCurrentProgram() == null) {
                    return false;
                }
                
-               var addressFactory = provider.plugin.getCurrentProgram().getAddressFactory();
+               var addressFactory = plugin.getCurrentProgram().getAddressFactory();
                var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
                
-               return provider.plugin.getCurrentProgram().getMemory().contains(address);
+               return plugin.getCurrentProgram().getMemory().contains(address);
            } catch (Exception e) {
                return false;
            }
@@ -549,16 +587,16 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
      */
     public void copyValueToClipboard() {
         try {
-            String value = provider.getDisplayField().getText();
+            String value = displayField.getText();
             StringSelection selection = new StringSelection(value);
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
             
             // Show brief feedback
-            provider.getDisplayField().setToolTipText("Value copied to clipboard: " + value);
+            displayField.setToolTipText("Value copied to clipboard: " + value);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(provider.getComponent(), 
-                "Error copying to clipboard: " + ex.getMessage(), 
-                "Copy Error", 
+            JOptionPane.showMessageDialog(provider.getComponent(),
+                "Error copying to clipboard: " + ex.getMessage(),
+                "Copy Error",
                 JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -572,14 +610,14 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
                 .getSystemClipboard().getData(DataFlavor.stringFlavor);
             
             if (clipboardText != null && !clipboardText.trim().isEmpty()) {
-                provider.getDisplayField().setText(clipboardText.trim());
+                displayField.setText(clipboardText.trim());
                 provider.parseInputValue(clipboardText.trim());
                 parseDisplayInput();
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(provider.getComponent(), 
-                "Error pasting from clipboard: " + ex.getMessage(), 
-                "Paste Error", 
+            JOptionPane.showMessageDialog(this,
+                "Error pasting from clipboard: " + ex.getMessage(),
+                "Paste Error",
                 JOptionPane.ERROR_MESSAGE);
         }
     }
