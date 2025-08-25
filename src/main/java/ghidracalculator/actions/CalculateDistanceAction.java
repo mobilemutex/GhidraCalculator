@@ -4,14 +4,17 @@ import docking.action.MenuData;
 import ghidra.app.context.ListingActionContext;
 import ghidra.app.context.ListingContextAction;
 import ghidra.program.model.address.Address;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public class CalculateDistanceAction extends ListingContextAction {
     protected final CalculatorPlugin plugin;
+    protected CalculatorLogic logic;
 
-    public CalculateDistanceAction(CalculatorPlugin plugin, String groupName) {
-        super("Mark Address for Distance", plugin.getName());
+    public CalculateDistanceAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String groupName) {
+        super("Calculate Distance", plugin.getName());
         this.plugin = plugin;
+        this.logic = calculatorLogic;
         setPopupMenuData(new MenuData(new String[] { "Calculator", ""}, groupName));
     }
 
@@ -20,7 +23,7 @@ public class CalculateDistanceAction extends ListingContextAction {
 			Address address = context.getAddress();
 			if (address != null) {
 				long currentOffset = address.getOffset();
-				plugin.getProvider().calculateDistanceToMarked(currentOffset);
+				logic.calculateDistanceToMarked(currentOffset);
 			}
     }
 
@@ -30,11 +33,11 @@ public class CalculateDistanceAction extends ListingContextAction {
             return false;
         }
 
-        if (plugin.getProvider().hasMarkedAddress() == false) {
+        if (logic.hasMarkedAddress() == false) {
             return false;
         }
         
-        long markedAddress = plugin.getProvider().getMarkedAddress();
+        long markedAddress = logic.getMarkedAddress();
         String menuName = "Calculate Distance from 0x" + Long.toHexString(markedAddress) + " to 0x" + context.getAddress().toString();
         getPopupMenuData().setMenuItemNamePlain(menuName);
         return true;

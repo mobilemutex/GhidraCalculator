@@ -78,17 +78,18 @@ public class CalculatorPlugin extends ProgramPlugin {
 	 * Create context menu actions for integration with Ghidra's listing windows
 	 */
 	private void createContextMenuActions() {
-		addAddressAction = new AddAddressAction(this, CALC_ADD);
-		addMemoryValueAction = new AddMemoryAction(this, CALC_ADD);
-		markAddressAction = new MarkAddressAction(this, CALC_MARK);
-		calculateDistanceAction = new CalculateDistanceAction(this, CALC_ADDRESS);
-		addScalarAction = new AddScalarAction(this, "Add scalar operand to Calculator", CALC_ADD);
-		markScalarAction = new MarkScalarAction(this, "Mark scalar operand", CALC_MARK);
-		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Add to marked scalar operand", "add", CALC_SCALAR);
-		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "Subtract from marked scalar operand", "subtract", CALC_SCALAR);
-		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, "XOR with marked scalar operand", "xor", CALC_SCALAR);
-		addDecompilerConstant = new AddDecompilerConstantAction(this);
-		markDecompilerConstant = new MarkDecompilerConstantAction(this);
+		CalculatorLogic logic = provider.getCalculatorLogic();
+		addAddressAction = new AddAddressAction(this, logic, CALC_ADD);
+		addMemoryValueAction = new AddMemoryAction(this, logic, CALC_ADD);
+		markAddressAction = new MarkAddressAction(this, logic, CALC_MARK);
+		calculateDistanceAction = new CalculateDistanceAction(this, logic, CALC_ADDRESS);
+		addScalarAction = new AddScalarAction(this, logic, "Add scalar operand to Calculator", CALC_ADD);
+		markScalarAction = new MarkScalarAction(this, logic, "Mark scalar operand", CALC_MARK);
+		addToMarkedScalarAction = new PerformMarkedScalarOperationAction(this, logic, "Add to marked scalar operand", "add", CALC_SCALAR);
+		subtractFromMarkedScalarAction = new PerformMarkedScalarOperationAction(this, logic, "Subtract from marked scalar operand", "subtract", CALC_SCALAR);
+		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, logic, "XOR with marked scalar operand", "xor", CALC_SCALAR);
+		addDecompilerConstant = new AddDecompilerConstantAction(this, logic);
+		markDecompilerConstant = new MarkDecompilerConstantAction(this, logic);
 
 		tool.addAction(addAddressAction);
 		tool.addAction(addMemoryValueAction);

@@ -5,20 +5,21 @@ import java.math.BigInteger;
 import ghidra.app.context.ListingActionContext;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.scalar.Scalar;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public class PerformMarkedScalarOperationAction extends AbstractScalarAction {
     private final String operation;
 
-    public PerformMarkedScalarOperationAction(CalculatorPlugin plugin, String actionName, String operation, String groupName) {
-        super(plugin, actionName, groupName, true);
+    public PerformMarkedScalarOperationAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String actionName, String operation, String groupName) {
+        super(plugin, calculatorLogic, actionName, groupName, true);
         this.operation = operation;
     }
 
     @Override
     public void actionPerformed(ListingActionContext context) {
         BigInteger value = BigInteger.valueOf(scalarOp.getValue());
-        plugin.getProvider().performMarkedValueOperation(value, operation);
+        logic.performMarkedValueOperation(value, operation);
     }
 
     @Override
@@ -38,7 +39,7 @@ public class PerformMarkedScalarOperationAction extends AbstractScalarAction {
         String menuName = operationString1 + 
             scalar.toString() +
             operationString2 + 
-            plugin.getProvider().getMarkedValue().toString(16);
+            plugin.getProvider().getCalculatorLogic().getMarkedValue().toString(16);
 
         return menuName;
     }

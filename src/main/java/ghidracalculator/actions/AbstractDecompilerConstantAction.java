@@ -8,19 +8,21 @@ import ghidra.app.plugin.core.decompile.actions.AbstractDecompilerAction;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.pcode.Varnode;
 import ghidra.program.model.scalar.Scalar;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public abstract class AbstractDecompilerConstantAction extends AbstractDecompilerAction {
     protected static final int MAX_SCALAR_SIZE = 8;
     protected CalculatorPlugin plugin;
+    protected CalculatorLogic logic;
     protected Scalar constant;
     
-    public AbstractDecompilerConstantAction(CalculatorPlugin plugin, String name) {
+    public AbstractDecompilerConstantAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String name) {
         super(name);
         this.plugin = plugin;
+        this.logic = calculatorLogic;
         setPopupMenuData(new MenuData(new String[] {""}, "Calculator"));
     }
-
 
     @Override
     protected boolean isEnabledForDecompilerContext(DecompilerActionContext context) {

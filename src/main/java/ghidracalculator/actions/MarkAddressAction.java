@@ -4,14 +4,17 @@ import docking.action.MenuData;
 import ghidra.app.context.ListingActionContext;
 import ghidra.app.context.ListingContextAction;
 import ghidra.program.model.address.Address;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public class MarkAddressAction extends ListingContextAction {
     protected final CalculatorPlugin plugin;
+    protected CalculatorLogic logic;
 
-    public MarkAddressAction(CalculatorPlugin plugin, String groupName) {
+    public MarkAddressAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String groupName) {
         super("Mark Address for Distance", plugin.getName());
         this.plugin = plugin;
+        this.logic = calculatorLogic;
         setPopupMenuData(new MenuData(new String[] { "Calculator", ""}, groupName));
     }
 
@@ -20,7 +23,7 @@ public class MarkAddressAction extends ListingContextAction {
 			Address address = context.getAddress();
 			if (address != null) {
 				long addressOffset = address.getOffset();
-				plugin.getProvider().markAddress(addressOffset);
+				logic.setMarkedAddress(addressOffset);
 			}
     }
 

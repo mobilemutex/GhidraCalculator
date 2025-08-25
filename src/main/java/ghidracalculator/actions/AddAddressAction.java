@@ -6,14 +6,17 @@ import docking.action.MenuData;
 import ghidra.app.context.ListingActionContext;
 import ghidra.app.context.ListingContextAction;
 import ghidra.program.model.address.Address;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public class AddAddressAction extends ListingContextAction {
     protected final CalculatorPlugin plugin;
+    protected CalculatorLogic logic;
 
-    public AddAddressAction(CalculatorPlugin plugin, String groupName) {
+    public AddAddressAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String groupName) {
         super("Add Address to Calculator", plugin.getName());
         this.plugin = plugin;
+        this.logic = calculatorLogic;
         setPopupMenuData(new MenuData(new String[] { "Calculator", ""}, groupName));
     }
 
@@ -25,7 +28,7 @@ public class AddAddressAction extends ListingContextAction {
         }
 
         BigInteger addressValue = new BigInteger(address.toString(false), 16);
-        plugin.getProvider().addValue(addressValue);
+        logic.addValue(addressValue);
     }
 
     @Override

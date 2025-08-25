@@ -11,16 +11,19 @@ import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.scalar.Scalar;
 import ghidra.program.util.OperandFieldLocation;
+import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorPlugin;
 
 public abstract class AbstractScalarAction extends ListingContextAction {
     protected final CalculatorPlugin plugin;
+    protected CalculatorLogic logic;
     protected Scalar scalarOp = null;
     protected Boolean isMarkedOperation;
 
-    public AbstractScalarAction(CalculatorPlugin plugin, String actionName, String groupName, Boolean isMarkedOperation) {
+    public AbstractScalarAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String actionName, String groupName, Boolean isMarkedOperation) {
         super(actionName, plugin.getName());
         this.plugin = plugin;
+        this.logic = calculatorLogic;
         this.isMarkedOperation = isMarkedOperation;
         setPopupMenuData(new MenuData(new String[] { "Calculator", ""}, groupName));
     }
@@ -28,7 +31,7 @@ public abstract class AbstractScalarAction extends ListingContextAction {
     @Override
     public boolean isEnabledForContext(ListingActionContext context) {
         // If the action is for a marked operation, ensure there is a previously marked value
-        if (isMarkedOperation && plugin.getProvider().hasMarkedValue() == false) {
+        if (isMarkedOperation && logic.hasMarkedValue() == false) {
             return false;
         }
 
