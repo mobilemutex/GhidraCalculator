@@ -81,7 +81,7 @@ public class CalculatorPlugin extends ProgramPlugin {
 		CalculatorLogic logic = provider.getCalculatorLogic();
 		addAddressAction = new AddAddressAction(this, logic, CALC_ADD);
 		addMemoryValueAction = new AddMemoryAction(this, logic, CALC_ADD);
-		markAddressAction = new MarkAddressAction(this, CALC_MARK);
+		markAddressAction = new MarkAddressAction(this, logic, CALC_MARK);
 		calculateDistanceAction = new CalculateDistanceAction(this, logic, CALC_ADDRESS);
 		addScalarAction = new AddScalarAction(this, logic, "Add scalar operand to Calculator", CALC_ADD);
 		markScalarAction = new MarkScalarAction(this, logic, "Mark scalar operand", CALC_MARK);
