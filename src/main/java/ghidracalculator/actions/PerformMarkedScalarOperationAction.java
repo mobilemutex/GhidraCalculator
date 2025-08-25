@@ -10,18 +10,16 @@ import ghidracalculator.CalculatorPlugin;
 
 public class PerformMarkedScalarOperationAction extends AbstractScalarAction {
     private final String operation;
-    private CalculatorLogic calculatorLogic;
 
     public PerformMarkedScalarOperationAction(CalculatorPlugin plugin, CalculatorLogic calculatorLogic, String actionName, String operation, String groupName) {
-        super(plugin, actionName, groupName, true);
+        super(plugin, calculatorLogic, actionName, groupName, true);
         this.operation = operation;
-        this.calculatorLogic = calculatorLogic;
     }
 
     @Override
     public void actionPerformed(ListingActionContext context) {
         BigInteger value = BigInteger.valueOf(scalarOp.getValue());
-        calculatorLogic.performMarkedValueOperation(value, operation);
+        logic.performMarkedValueOperation(value, operation);
     }
 
     @Override
