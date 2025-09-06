@@ -35,6 +35,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	private JTextField displayField;
 	private JLabel hexModeLabel, decModeLabel, octModeLabel, binModeLabel;
 	public JLabel hexValueLabel, decValueLabel, octValueLabel, binValueLabel;
+	private JLabel[] binaryBits;
 	public JLabel markedValueLabel, markedAddressLabel;
 	private Map<String, JLabel> modeLabels, valueLabels;
 	
@@ -188,11 +189,30 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		for (int i = 0; i < modes.length; i++) {
             String mode = modes[i];
 
-			gbc.gridx = 0; gbc.gridy = 1 + i; gbc.weightx = 0.0;
-			panel.add(modeLabels.get(mode), gbc);
+			if (mode == "BIN") {
+				gbc.anchor = GridBagConstraints.NORTHWEST;
+				gbc.gridx = 0; gbc.gridy = 1 + i; gbc.weightx = 0.0;
+				panel.add(modeLabels.get(mode), gbc);
 
-			gbc.gridx = 1; gbc.weightx = 1.0;
-			panel.add(valueLabels.get(mode), gbc);
+				gbc.gridx = 1; gbc.weightx = 1.0; 
+				gbc.fill = GridBagConstraints.HORIZONTAL;
+				gbc.anchor = GridBagConstraints.WEST;
+
+				// Wrap the binary panel in a BorderLayout to pin the left side during resizing
+				JPanel binaryDisplayWrapper = new JPanel(new BorderLayout());
+				binaryDisplayWrapper.add(buildClickableBinaryDisplay(), BorderLayout.WEST);
+				panel.add(binaryDisplayWrapper, gbc);
+			}
+			else {
+				gbc.anchor = GridBagConstraints.WEST;
+				gbc.gridx = 0; gbc.gridy = 1 + i; gbc.weightx = 0.0;
+				panel.add(modeLabels.get(mode), gbc);
+
+				gbc.gridx = 1; gbc.weightx = 1.0; 
+				gbc.fill = GridBagConstraints.HORIZONTAL;
+				panel.add(valueLabels.get(mode), gbc);
+			}
+			
 		}
 
 		// Add mouse listeners to mode labels
@@ -208,14 +228,16 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             });
         }
 
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+
 		// Status labels for marked values
-		gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2; gbc.weightx = 1.0;
+		gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2; gbc.weightx = 1.0;
 		markedValueLabel = new JLabel("Marked Value: None");
 		markedValueLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
 		//markedValueLabel.setForeground(Color.BLUE);
 		panel.add(markedValueLabel, gbc);
 		
-		gbc.gridy = 6;
+		gbc.gridy++;
 		markedAddressLabel = new JLabel("Marked Address: None");
 		markedAddressLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
 		//markedAddressLabel.setForeground(Color.BLUE);
@@ -223,6 +245,72 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		
 		return panel;
 	}
+
+	/**
+     * Build clickable binary display with two rows (63-32, 31-0) and nibble grouping
+     */
+    private JPanel buildClickableBinaryDisplay() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(1, 0, 1, 0);
+		gbc.anchor = GridBagConstraints.WEST;
+        
+        // Initialize binary bits array (64 bits)
+        binaryBits = new JLabel[64];
+        
+        // Top row: bits 63-32 (left to right)
+        gbc.gridy = 0;
+        int gridX = 0;
+        for (int bitPos = 63; bitPos >= 32; bitPos--) {
+            // Add space every 4 bits (nibble grouping)
+            if ((63 - bitPos) % 4 == 0 && bitPos != 63) {
+                gbc.gridx = gridX++;
+                JLabel space = new JLabel(" ");
+                panel.add(space, gbc);
+            }
+            
+            gbc.gridx = gridX++;
+            JLabel bitButton = createBitButton(bitPos);
+            binaryBits[bitPos] = bitButton;
+            panel.add(bitButton, gbc);
+        }
+
+        // Bottom row: bits 31-0 (left to right)
+        gbc.gridy = 1;
+        gridX = 0;
+        for (int bitPos = 31; bitPos >= 0; bitPos--) {
+            // Add space every 4 bits (nibble grouping)
+            if ((31 - bitPos) % 4 == 0 && bitPos != 31) {
+                gbc.gridx = gridX++;
+                JLabel space = new JLabel(" ");
+                panel.add(space, gbc);
+            }
+            
+            gbc.gridx = gridX++;
+            JLabel bitButton = createBitButton(bitPos);
+            binaryBits[bitPos] = bitButton;
+            panel.add(bitButton, gbc);
+        }
+        
+        return panel;
+    }
+    
+    /**
+     * Create a clickable bit button JLabel
+     */
+    private JLabel createBitButton(int bitPosition) {
+        JLabel bitButton = new JLabel("0");
+        bitButton.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        bitButton.setToolTipText("Bit " + bitPosition + " - Click to flip");
+
+        bitButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    flipBit(bitPosition);
+                }
+			});
+        return bitButton;
+    }
 
 	private JPanel createButtonPanel() {
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
@@ -536,7 +624,32 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
         String paddedBinary = "0".repeat(padLen) + binaryStr;
         String binFormatted = paddedBinary.replaceAll("(.{4})", "$1 ").trim();
         binValueLabel.setText(sign + binFormatted);
+
+		// Pad to 64 bits
+        while (binaryStr.length() < 64) {
+            binaryStr = "0" + binaryStr;
+        }
+        
+        // Update bit buttons
+        for (int i = 0; i < 64; i++) {
+            char bitChar = i < binaryStr.length() ? 
+                          binaryStr.charAt(binaryStr.length() - 1 - i) : '0';
+            
+            binaryBits[i].setText(String.valueOf(bitChar));
+        }
 	}
+
+	/**
+     * Flip a specific bit in the current value
+     */
+    private void flipBit(int bitPosition) {
+        BigInteger bitMask = BigInteger.ONE.shiftLeft(bitPosition);
+
+		BigInteger currentValue = calculatorLogic.getCurrentValue();
+        calculatorLogic.setCurrentValue(currentValue.xor(bitMask));
+        calculatorLogic.setNewNumber(false);
+        updateDisplay();
+    }
 
 	/**
 	* Update the display with current value in all number bases

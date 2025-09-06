@@ -12,8 +12,6 @@ import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressFactory;
 import ghidra.program.util.ProgramLocation;
 import ghidracalculator.resources.GhidraCalcIcons;
-import ghidracalculator.utils.HashUtils;
-import ghidracalculator.utils.NumberUtils;
 import resources.ResourceManager;
 import ghidracalculator.ui.CalculatorUI;
 
