@@ -33,6 +33,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	
 	// GUI Components
 	private JTextField displayField;
+	private JLabel bitWidthLabel;
 	private JLabel hexModeLabel, decModeLabel, octModeLabel, binModeLabel;
 	public JLabel hexValueLabel, decValueLabel, octValueLabel, binValueLabel;
 	private JLabel[] binaryBits;
@@ -134,53 +135,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 
 		// Main display field
 		gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2; gbc.weightx = 1.0;
-		displayField = new JTextField();
-		displayField.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16));
-		displayField.setHorizontalAlignment(JTextField.RIGHT);
-		displayField.setEditable(true); // Allow keyboard input
-		displayField.setBackground(GThemeDefaults.Colors.BACKGROUND);
-		displayField.setForeground(GThemeDefaults.Colors.FOREGROUND);
-
-		displayField.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e) {
-				if (e.isPopupTrigger()) {
-					showDisplayContextMenu(e);
-				}
-			}
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				if (e.isPopupTrigger()) {
-					showDisplayContextMenu(e);
-				}
-			}
-		});
-		
-		// Add keyboard input support
-		displayField.addKeyListener(new KeyListener() {
-			@Override
-			public void keyPressed(KeyEvent e) {
-				handleKeyPress(e);
-			}
-			
-			@Override
-			public void keyReleased(KeyEvent e) {
-				// Not used
-			}
-			
-			@Override
-			public void keyTyped(KeyEvent e) {
-				// Not used - we handle in keyPressed
-			}
-		});
-		
-		// Add action listener for Enter key
-		displayField.addActionListener(e -> {
-			parseDisplayInput();
-		});
-		
-		panel.add(displayField, gbc);
+		panel.add(buildInputDisplayField(), gbc);
 		
 		// Multi-base display labels
 		gbc.gridwidth = 1; 
@@ -243,6 +198,73 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		//markedAddressLabel.setForeground(Color.BLUE);
 		panel.add(markedAddressLabel, gbc);
 		
+		return panel;
+	}
+
+	private JPanel buildInputDisplayField() {
+		JPanel panel = new JPanel();
+		panel.setLayout(new OverlayLayout(panel));
+
+		displayField = new JTextField();
+		displayField.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16));
+		displayField.setHorizontalAlignment(JTextField.RIGHT);
+		displayField.setEditable(true); // Allow keyboard input
+		displayField.setBackground(GThemeDefaults.Colors.BACKGROUND);
+		displayField.setForeground(GThemeDefaults.Colors.FOREGROUND);
+
+		displayField.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (e.isPopupTrigger()) {
+					showDisplayContextMenu(e);
+				}
+			}
+			
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				if (e.isPopupTrigger()) {
+					showDisplayContextMenu(e);
+				}
+			}
+		});
+
+		// Add keyboard input support
+		displayField.addKeyListener(new KeyListener() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				handleKeyPress(e);
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// Not used
+			}
+			
+			@Override
+			public void keyTyped(KeyEvent e) {
+				// Not used - we handle in keyPressed
+			}
+		});
+		
+		// Add action listener for Enter key
+		displayField.addActionListener(e -> {
+			parseDisplayInput();
+		});
+
+		bitWidthLabel = new JLabel("32-bit ");
+		bitWidthLabel.setForeground(GThemeDefaults.Colors.Palette.GRAY);
+		bitWidthLabel.setHorizontalAlignment(JLabel.LEFT);
+		//bitWidthLabel.setVerticalAlignment(JLabel.CENTER);
+
+		displayField.setAlignmentX(0.0f);
+        displayField.setAlignmentY(0.0f);
+        bitWidthLabel.setAlignmentX(0.0f);
+        bitWidthLabel.setAlignmentY(0.0f);
+        
+        // Add components (order matters - label on top)
+        panel.add(bitWidthLabel);
+        panel.add(displayField);
+
 		return panel;
 	}
 
@@ -416,7 +438,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 							  "NOR", "MOD", 
 							  "RoR", "RoL",
 							  "<<", ">>", 
-							  "+/-" };
+							  "+/-", "2's"};
 
 		for (String op : operators) {
 			JButton btn = new JButton(op);

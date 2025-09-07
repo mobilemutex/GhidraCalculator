@@ -3,6 +3,7 @@ package ghidracalculator;
 import java.math.BigInteger;
 
 import ghidra.app.services.ConsoleService;
+import ghidracalculator.utils.NumberUtils;
 
 /**
  * Calculator Logic class to handle core arithmetic operations and state management
@@ -82,6 +83,14 @@ public class CalculatorLogic {
     
     public void setMarkedAddress(long address) {
         model.setMarkedAddress(address);
+    }
+
+    public void setBitWidth(int bitWidth) {
+        model.setBitWidth(bitWidth);
+    }
+
+    public int getBitWidth() {
+        return model.getBitWidth();
     }
     
     /**
@@ -259,6 +268,9 @@ public class CalculatorLogic {
    case "+/-":
     flipSign();
     break;
+   case "2's":
+    performTwosComplement();
+    break;
    case "=":
     performEquals();
     break;
@@ -407,6 +419,16 @@ public class CalculatorLogic {
         String operationString = String.format("NOT %s",
             previousValue.toString(16).toUpperCase());
         provider.addToHistory(model.getCurrentValue(), operationString);
+    }
+
+    /** 
+     * Perform 2's complement operation
+     */
+    public void performTwosComplement() {
+        BigInteger complement = NumberUtils.twosComplement(model.getCurrentValue(), model.getBitWidth());
+
+        model.setCurrentValue(complement);
+        model.setNewNumber(false);
     }
     
     /**
