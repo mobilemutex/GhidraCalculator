@@ -39,6 +39,8 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	private JLabel[] binaryBits;
 	public JLabel markedValueLabel, markedAddressLabel;
 	private Map<String, JLabel> modeLabels, valueLabels;
+	// Bit width values for cycling
+	private static final int[] BIT_WIDTH_VALUES = {8, 16, 32, 64};
 	
 	/**
 	 * Constructor
@@ -255,6 +257,16 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		bitWidthLabel.setForeground(GThemeDefaults.Colors.Palette.GRAY);
 		bitWidthLabel.setHorizontalAlignment(JLabel.LEFT);
 		//bitWidthLabel.setVerticalAlignment(JLabel.CENTER);
+		
+		// Add mouse listener to toggle bit width
+		bitWidthLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				cycleBitWidth();
+			}
+		});
+		bitWidthLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		bitWidthLabel.setToolTipText("Bit width - Used for 2's Complement Operations");
 
 		displayField.setAlignmentX(0.0f);
         displayField.setAlignmentY(0.0f);
@@ -712,6 +724,9 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		// Update marked value and address labels
 		updateMarkedLabels();
 		
+		// Update bit width label
+		bitWidthLabel.setText(calculatorLogic.getBitWidth() + "-bit ");
+		
 		// Update address validation info in tooltip
 		String addressInfo = getAddressInfo(currentValue);
 		displayField.setToolTipText(addressInfo);
@@ -888,4 +903,27 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
     public void modelError(CalculatorModel.CalculatorModelErrorEvent event) {
         JOptionPane.showMessageDialog(this, event.getErrorMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
+ 
+ /**
+  * Cycle through bit width values (8, 16, 32, 64)
+  */
+ private void cycleBitWidth() {
+  int currentBitWidth = calculatorLogic.getBitWidth();
+  int nextBitWidth = BIT_WIDTH_VALUES[0]; // Default to first value
+  
+  // Find the next bit width in the cycle
+  for (int i = 0; i < BIT_WIDTH_VALUES.length; i++) {
+   if (BIT_WIDTH_VALUES[i] == currentBitWidth) {
+    // Get the next value, or wrap to the first if we're at the last
+    nextBitWidth = BIT_WIDTH_VALUES[(i + 1) % BIT_WIDTH_VALUES.length];
+    break;
+   }
+  }
+  
+  // Update the model with the new bit width
+  calculatorLogic.setBitWidth(nextBitWidth);
+  
+  // Update the display to reflect the change
+  updateDisplay();
+ }
 }
