@@ -271,6 +271,9 @@ public class CalculatorLogic {
    case "2's":
     performTwosComplement();
     break;
+   case "Swap Endianness":
+    performEndiannessSwap();
+    break;
    case "=":
     performEquals();
     break;
@@ -429,6 +432,37 @@ public class CalculatorLogic {
 
         model.setCurrentValue(complement);
         model.setNewNumber(false);
+    }
+
+    /**
+     * Perform endianness swap based on bitwidth setting
+     */
+    public void performEndiannessSwap(){
+        BigInteger currentValue = model.getCurrentValue();
+        int bitWidth = model.getBitWidth();
+        
+        // Validate bit width for endianness swap
+        if (bitWidth != 8 && bitWidth != 16 && bitWidth != 32 && bitWidth != 64) {
+            model.notifyError("Endianness swap requires 8, 16, 32, or 64 bit width");
+            return;
+        }
+        
+        // Perform endianness swap using NumberUtils
+        BigInteger swappedValue = NumberUtils.convertEndianness(
+            currentValue,
+            bitWidth,
+            NumberUtils.Endianness.BIG_ENDIAN,
+            NumberUtils.Endianness.LITTLE_ENDIAN
+        );
+        
+        model.setCurrentValue(swappedValue);
+        model.setNewNumber(true);
+        
+        // Add to history
+        String operationString = String.format("Swap Endianness 0x%s -> 0x%s",
+            currentValue.toString(16).toUpperCase(),
+            swappedValue.toString(16).toUpperCase());
+        provider.addToHistory(swappedValue, operationString);
     }
     
     /**

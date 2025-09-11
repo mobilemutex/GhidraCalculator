@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.*;
+import javax.swing.SwingUtilities;
 
 import generic.theme.GThemeDefaults;
 import ghidracalculator.CalculatorLogic;
@@ -234,17 +235,17 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		displayField.addKeyListener(new KeyListener() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				handleKeyPress(e);
+				//Not used
 			}
 			
 			@Override
 			public void keyReleased(KeyEvent e) {
-				// Not used
+				handleKeyPress(e);
 			}
 			
 			@Override
 			public void keyTyped(KeyEvent e) {
-				// Not used - we handle in keyPressed
+				// Not used
 			}
 		});
 		
@@ -466,7 +467,17 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
                 col = 0;
                 row++;
             }
-		}
+		}		
+
+		String op = "Swap Endianness";
+		JButton endianBtn = new JButton(op);
+		endianBtn.setMargin(new Insets(8, 6, 8, 6));
+		endianBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+		endianBtn.addActionListener(e -> calculatorLogic.performOperation(op));
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.gridwidth = 2;
+		operationsPanel.add(endianBtn, gbc);
 
 		return operationsPanel;
 	}
@@ -777,23 +788,46 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		}
        }
        
-       /**
-        * Check if a value represents a valid address in the current program
-        */
-       private boolean isValidAddress(BigInteger value) {
-           try {
-               if (plugin.getCurrentProgram() == null) {
-                   return false;
-               }
-               
-               var addressFactory = plugin.getCurrentProgram().getAddressFactory();
-               var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
-               
-               return plugin.getCurrentProgram().getMemory().contains(address);
-           } catch (Exception e) {
-               return false;
-           }
-       }
+	/**
+	* Check if a value represents a valid address in the current program
+	*/
+	private boolean isValidAddress(BigInteger value) {
+		try {
+			if (plugin.getCurrentProgram() == null) {
+				return false;
+			}
+			
+			var addressFactory = plugin.getCurrentProgram().getAddressFactory();
+			var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+			
+			return plugin.getCurrentProgram().getMemory().contains(address);
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Cycle through bit width values (8, 16, 32, 64)
+	*/
+	private void cycleBitWidth() {
+	int currentBitWidth = calculatorLogic.getBitWidth();
+	int nextBitWidth = BIT_WIDTH_VALUES[0]; // Default to first value
+	
+	// Find the next bit width in the cycle
+	for (int i = 0; i < BIT_WIDTH_VALUES.length; i++) {
+	if (BIT_WIDTH_VALUES[i] == currentBitWidth) {
+		// Get the next value, or wrap to the first if we're at the last
+		nextBitWidth = BIT_WIDTH_VALUES[(i + 1) % BIT_WIDTH_VALUES.length];
+		break;
+	}
+	}
+	
+	// Update the model with the new bit width
+	calculatorLogic.setBitWidth(nextBitWidth);
+	
+	// Update the display to reflect the change
+	updateDisplay();
+	}
 
 	/**
      * Copy current value to clipboard
@@ -854,7 +888,22 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
                 return;
             case KeyEvent.VK_BACK_SPACE:
             case KeyEvent.VK_DELETE:
-                // Allow normal backspace/delete behavior
+                // Let the text field process the backspace/delete key first
+                SwingUtilities.invokeLater(() -> {
+                    // Check what the text is after the deletion
+                    String textAfterDeletion = displayField.getText();
+                    // If the text is now an invalid prefix, clear the field
+                    if (textAfterDeletion.equals("0x") || textAfterDeletion.equals("0X") ||
+                        textAfterDeletion.equals("0b") || textAfterDeletion.equals("0B") ||
+                        (textAfterDeletion.equals("0") && calculatorLogic.getInputMode().equals("OCT"))) {
+                        calculatorLogic.clearCalculator();
+                        updateDisplay();
+                    } else {
+                        // Otherwise, parse the input normally
+                        parseDisplayInput();
+                    }
+                });
+                e.consume();
                 return;
         }
         
@@ -888,6 +937,8 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             e.consume();
         }
         // For other characters, let the text field handle them normally (This is kind of broken and clunky)
+		parseDisplayInput();
+		e.consume();
     }
     
     /**
@@ -903,27 +954,4 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
     public void modelError(CalculatorModel.CalculatorModelErrorEvent event) {
         JOptionPane.showMessageDialog(this, event.getErrorMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
- 
- /**
-  * Cycle through bit width values (8, 16, 32, 64)
-  */
- private void cycleBitWidth() {
-  int currentBitWidth = calculatorLogic.getBitWidth();
-  int nextBitWidth = BIT_WIDTH_VALUES[0]; // Default to first value
-  
-  // Find the next bit width in the cycle
-  for (int i = 0; i < BIT_WIDTH_VALUES.length; i++) {
-   if (BIT_WIDTH_VALUES[i] == currentBitWidth) {
-    // Get the next value, or wrap to the first if we're at the last
-    nextBitWidth = BIT_WIDTH_VALUES[(i + 1) % BIT_WIDTH_VALUES.length];
-    break;
-   }
-  }
-  
-  // Update the model with the new bit width
-  calculatorLogic.setBitWidth(nextBitWidth);
-  
-  // Update the display to reflect the change
-  updateDisplay();
- }
 }
