@@ -736,7 +736,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		updateMarkedLabels();
 		
 		// Update bit width label
-		bitWidthLabel.setText(calculatorLogic.getBitWidth() + "-bit ");
+		bitWidthLabel.setText(" " + calculatorLogic.getBitWidth() + "-bit ");
 		
 		// Update address validation info in tooltip
 		String addressInfo = getAddressInfo(currentValue);
