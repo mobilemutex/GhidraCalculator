@@ -13,13 +13,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.*;
-import javax.swing.SwingUtilities;
 
 import generic.theme.GThemeDefaults;
 import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorProvider;
 import ghidracalculator.CalculatorModel;
 import ghidracalculator.CalculatorPlugin;
+import ghidracalculator.utils.HashUtils;
 
 /**
  * Calculator UI
@@ -83,20 +83,28 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	 * Build the main calculator panel
 	 */
 	private void initializeUI() {
-		JPanel mainPanel = new JPanel(new BorderLayout());
-		
+		JPanel mainPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridx = 0; gbc.gridy = 0;
+		gbc.weighty = 0; gbc.weightx = 1;
+
 		// Create display panel
 		JPanel displayPanel = createDisplayPanel();
-		mainPanel.add(displayPanel, BorderLayout.NORTH);
+		mainPanel.add(displayPanel, gbc);
 
 		// Create button panel
 		JPanel buttonPanel = createButtonPanel();
-		mainPanel.add(buttonPanel, BorderLayout.CENTER);
+		gbc.gridy++;
+		gbc.weighty = 0.7;
+		mainPanel.add(buttonPanel, gbc);
 		
 		// Create increment panel
 		JPanel incrementPanel = createIncrementPanel();
-		mainPanel.add(incrementPanel, BorderLayout.SOUTH);
-
+		gbc.gridy++;
+		gbc.weighty = 0.01;
+		mainPanel.add(incrementPanel, gbc);
+		
         add(mainPanel, BorderLayout.CENTER);
         
         // Initialize display with default values
@@ -483,23 +491,224 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	}
 
 	/**
-	 * Create the increment/decrement and bitwise operations panel
+	 * Create the increment/decrement panel
 	 */
 	private JPanel createIncrementPanel() {
-		JPanel panel = new JPanel(new GridLayout(2, 4, 2, 2));
-		panel.setBorder(BorderFactory.createTitledBorder("Quick Operations"));
+		// Create main panel with BorderLayout
+		JPanel mainPanel = new JPanel(new BorderLayout());
+		mainPanel.setBorder(BorderFactory.createTitledBorder(""));
+		
+		// Create tab panel for switching between views
+		JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		
+		// Create tab labels
+		JLabel incrementTab = new JLabel(" Increment/Decrement ");
+		incrementTab.setOpaque(true);
+		incrementTab.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(3, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
+				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+		incrementTab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		
+		JLabel hashTab = new JLabel(" Hashing ");
+		hashTab.setOpaque(true);
+		hashTab.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(1, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
+				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+		hashTab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		
+		tabPanel.add(incrementTab);
+		tabPanel.add(hashTab);
+		
+		// Create card panel with CardLayout
+		JPanel cardPanel = new JPanel(new CardLayout());
+		
+		// Create increment/decrement panel (existing functionality)
+		JPanel incrementDecrementPanel = new JPanel(new GridLayout(3, 4, 2, 2));
 		
 		// Row 1: Increment operations
-		panel.add(createButton("+1", e -> calculatorLogic.increment(BigInteger.ONE)));
-		panel.add(createButton("+0x10", e -> calculatorLogic.increment(BigInteger.valueOf(0x10))));
-		panel.add(createButton("+0x100", e -> calculatorLogic.increment(BigInteger.valueOf(0x100))));
-		panel.add(createButton("+0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(0x1000))));
+		incrementDecrementPanel.add(createButton("+1", e -> calculatorLogic.increment(BigInteger.ONE)));
+		incrementDecrementPanel.add(createButton("+0x10", e -> calculatorLogic.increment(BigInteger.valueOf(0x10))));
+		incrementDecrementPanel.add(createButton("+0x100", e -> calculatorLogic.increment(BigInteger.valueOf(0x100))));
+		incrementDecrementPanel.add(createButton("+0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(0x1000))));
 		
 		// Row 2: Decrement operations
-		panel.add(createButton("-1", e -> calculatorLogic.increment(BigInteger.ONE.negate())));
-		panel.add(createButton("-0x10", e -> calculatorLogic.increment(BigInteger.valueOf(-0x10))));
-		panel.add(createButton("-0x100", e -> calculatorLogic.increment(BigInteger.valueOf(-0x100))));
-		panel.add(createButton("-0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(-0x1000))));
+		incrementDecrementPanel.add(createButton("-1", e -> calculatorLogic.increment(BigInteger.ONE.negate())));
+		incrementDecrementPanel.add(createButton("-0x10", e -> calculatorLogic.increment(BigInteger.valueOf(-0x10))));
+		incrementDecrementPanel.add(createButton("-0x100", e -> calculatorLogic.increment(BigInteger.valueOf(-0x100))));
+		incrementDecrementPanel.add(createButton("-0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(-0x1000))));
+		
+		incrementDecrementPanel.add(new JLabel());
+		incrementDecrementPanel.add(new JLabel());
+		incrementDecrementPanel.add(new JLabel());
+		incrementDecrementPanel.add(new JLabel());
+
+		// Create hashing panel
+		JPanel hashingPanel = createHashingPanel();
+		
+		// Add panels to card layout
+		cardPanel.add(incrementDecrementPanel, "increment");
+		cardPanel.add(hashingPanel, "hashing");
+		
+		// Add tab panel and card panel to main panel
+		mainPanel.add(tabPanel, BorderLayout.NORTH);
+		mainPanel.add(cardPanel, BorderLayout.CENTER);
+		
+		// Add mouse listeners for tab switching
+		incrementTab.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				CardLayout cl = (CardLayout)(cardPanel.getLayout());
+				cl.show(cardPanel, "increment");
+				// Update tab styling
+				incrementTab.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(3, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
+					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+				hashTab.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(1, 1, 1, 1, GThemeDefaults.Colors.Palette.GRAY),
+					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+			}
+		});
+		
+		hashTab.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				CardLayout cl = (CardLayout)(cardPanel.getLayout());
+				cl.show(cardPanel, "hashing");
+				// Update tab styling
+				incrementTab.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(1, 1, 1, 1, GThemeDefaults.Colors.Palette.GRAY),
+					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+				hashTab.setBorder(BorderFactory.createCompoundBorder(
+					BorderFactory.createMatteBorder(3, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
+					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+			}
+		});
+		
+		return mainPanel;
+	}
+	
+	/**
+	* Create the hashing operations panel
+	*/
+	private JPanel createHashingPanel() {
+		JPanel panel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = new Insets(2, 2, 2, 2);
+		gbc.anchor = GridBagConstraints.WEST;
+		
+		// Start address label and field
+		gbc.gridx = 0; gbc.gridy = 0;
+		panel.add(new JLabel("Start Address:"), gbc);
+		
+		gbc.gridx = 1; gbc.weightx = .5; gbc.fill = GridBagConstraints.HORIZONTAL;
+		JTextField addressField = new JTextField(10);
+		addressField.setToolTipText("Enter start address in hex format (e.g., 0x1000)");
+		panel.add(addressField, gbc);
+		
+		// Button to pull address from calculator display
+		gbc.gridx = 2; gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE;
+		JButton pullAddressButton = new JButton("From Display");
+		pullAddressButton.setToolTipText("Pull start address from calculator display");
+		pullAddressButton.addActionListener(e -> {
+			// Get current value from calculator and set it in the address field
+			BigInteger currentValue = calculatorLogic.getCurrentValue();
+			addressField.setText("0x" + currentValue.toString(16).toUpperCase());
+		});
+		panel.add(pullAddressButton, gbc);
+		
+		// Length label and field
+		gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
+		panel.add(new JLabel("Length:"), gbc);
+		
+		gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+		JTextField lengthField = new JTextField(10);
+		lengthField.setToolTipText("Enter length in hex format");
+		panel.add(lengthField, gbc);
+
+		// Button to pull length from calculator display
+		gbc.gridx = 2; gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE;
+		JButton pullLengthButton = new JButton("From Display");
+		pullLengthButton.setToolTipText("Pull length from calculator display");
+		pullLengthButton.addActionListener(e -> {
+			// Get current value from calculator and set it in the address field
+			BigInteger currentValue = calculatorLogic.getCurrentValue();
+			lengthField.setText("0x" + currentValue.toString(16).toUpperCase());
+		});
+		panel.add(pullLengthButton, gbc);
+		
+		// Calculate button
+		gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.NONE;
+		gbc.anchor = GridBagConstraints.CENTER;
+		JButton calculateButton = new JButton("Calculate Hashes");
+		calculateButton.setToolTipText("Calculate all supported hash algorithms for the specified memory region");
+		calculateButton.addActionListener(e -> {
+			try {
+				// Parse address
+				String addressText = addressField.getText().trim();
+				if (addressText.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Please enter a start address", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				BigInteger startAddress;
+				if (addressText.startsWith("0x") || addressText.startsWith("0X")) {
+					startAddress = new BigInteger(addressText.substring(2), 16);
+				} else {
+					startAddress = new BigInteger(addressText, 16);
+				}
+				
+				// Parse length
+				String lengthText = lengthField.getText().trim();
+				if (lengthText.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Please enter a length", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				BigInteger lengthHex;
+				if (lengthText.startsWith("0x") || lengthText.startsWith("0X")) {
+					lengthHex = new BigInteger(lengthText.substring(2), 16);
+				} else {
+					lengthHex = new BigInteger(lengthText, 16);
+				}
+
+				int length = lengthHex.intValue();
+				if (length <= 0) {
+					JOptionPane.showMessageDialog(this, "Length must be positive", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				// Calculate hashes for all supported algorithms
+				StringBuilder result = new StringBuilder();
+				result.append("\n=== Hash Calculations ===\n");
+				result.append("Start Address: 0x").append(startAddress.toString(16).toUpperCase()).append("\n");
+				result.append("Length: ").append(length).append(" bytes\n\n");
+				
+				// Calculate memory hash for each algorithm
+				HashUtils.HashAlgorithm[] algorithms = HashUtils.HashAlgorithm.values();
+				for (HashUtils.HashAlgorithm algorithm : algorithms) {
+					try {
+						HashUtils.HashResult hashResult = HashUtils.calculateMemoryHash(startAddress, length, algorithm);
+						result.append(algorithm.getAlgorithmName()).append(": ").append(hashResult.toHexString().toUpperCase()).append("\n");
+					} catch (Exception ex) {
+						result.append(algorithm.getAlgorithmName()).append(": ERROR - ").append(ex.getMessage()).append("\n");
+					}
+				}
+				
+				// Output to console
+				var consoleService = provider.plugin.getTool().getService(ghidra.app.services.ConsoleService.class);
+				if (consoleService != null) {
+					consoleService.println(result.toString());
+				} else {
+					// Fallback to JOptionPane if console service is not available
+					JOptionPane.showMessageDialog(this, result.toString(), "Hash Results", JOptionPane.INFORMATION_MESSAGE);
+				}
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(this, "Invalid number format: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(this, "Error calculating hashes: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		});
+		panel.add(calculateButton, gbc);
 		
 		return panel;
 	}

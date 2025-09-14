@@ -5,6 +5,7 @@ Feature Additions:
 + 2's complement
   - Allow for negative display values to be converted to twos complement
 - hashing operations
+    - Allow hashing from a selection
 - exporting/importing history windows
     - saving/loading sessions
 - batch operations on multiple selected values
