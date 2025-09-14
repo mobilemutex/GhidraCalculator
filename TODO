@@ -3,13 +3,7 @@
 
 Feature Additions:
 + 2's complement
-  - Allow for negative display values to be converted to twos complement
-- hashing operations
-    - Allow hashing from a selection
+  - Allow for negative display values to be converted to twos complement?
 - exporting/importing history windows
     - saving/loading sessions
 - batch operations on multiple selected values
-- Make bottom panel into a cardLayout and allow swapping between quick ops, hash ops, etc
-- Add settings menu
-    - Enable/Disable Quick Operations panel
-    - enable/disable hash operations panel

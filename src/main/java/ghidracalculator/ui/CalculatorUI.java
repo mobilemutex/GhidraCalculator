@@ -40,9 +40,10 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	private JLabel[] binaryBits;
 	public JLabel markedValueLabel, markedAddressLabel;
 	private Map<String, JLabel> modeLabels, valueLabels;
-	private boolean isIncrementPanelCollapsed = false;
 	// Bit width values for cycling
 	private static final int[] BIT_WIDTH_VALUES = {8, 16, 32, 64};
+
+	public JTabbedPane extrasPanel;
 	
 	/**
 	 * Constructor
@@ -101,7 +102,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		mainPanel.add(buttonPanel, gbc);
 		
 		// Create increment panel
-		JPanel incrementPanel = createIncrementPanel();
+		JPanel incrementPanel = createExtrasPanel();
 		gbc.gridy++;
 		gbc.weighty = 0.01;
 		mainPanel.add(incrementPanel, gbc);
@@ -266,7 +267,6 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		bitWidthLabel = new JLabel("32-bit ");
 		bitWidthLabel.setForeground(GThemeDefaults.Colors.Palette.GRAY);
 		bitWidthLabel.setHorizontalAlignment(JLabel.LEFT);
-		//bitWidthLabel.setVerticalAlignment(JLabel.CENTER);
 		
 		// Add mouse listener to toggle bit width
 		bitWidthLabel.addMouseListener(new MouseAdapter() {
@@ -492,46 +492,30 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	}
 
 	/**
-	 * Create the increment/decrement panel
+	 * Create the extras panel
 	 */
-	private JPanel createIncrementPanel() {
+	private JPanel createExtrasPanel() {
 		// Create main panel with BorderLayout
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.setBorder(BorderFactory.createTitledBorder(""));
 		
-		// Create tab panel for switching between views
-		JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		extrasPanel = new JTabbedPane();
 
-		// Create tab labels
-		JLabel toggleButton = new JLabel(" \u25BE ");
-		toggleButton.setOpaque(true);
-		toggleButton.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createMatteBorder(1, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
-				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-		toggleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		// Create tab panels
+		JPanel incrementDecrementPanel = createIncrementPanel();
+		JPanel hashingPanel = createHashingPanel();
 
-		JLabel incrementTab = new JLabel(" Inc/Dec-Ops ");
-		incrementTab.setOpaque(true);
-		incrementTab.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createMatteBorder(3, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
-				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-		incrementTab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		extrasPanel.addTab("Inc/Dec-Ops", incrementDecrementPanel);
+		extrasPanel.addTab("Hash-Ops", hashingPanel);
+		mainPanel.add(extrasPanel, BorderLayout.CENTER);
 		
-		JLabel hashTab = new JLabel(" Hash-Ops ");
-		hashTab.setOpaque(true);
-		hashTab.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createMatteBorder(1, 1, 1, 1, GThemeDefaults.Colors.Palette.GRAY),
-				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-		hashTab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		
-		tabPanel.add(toggleButton);
-		tabPanel.add(incrementTab);
-		tabPanel.add(hashTab);
-		
-		// Create card panel with CardLayout
-		JPanel cardPanel = new JPanel(new CardLayout());
-		
-		// Create increment/decrement panel (existing functionality)
+		return mainPanel;
+	}
+
+	/**
+	 * Create the Increment/Decrement panel
+	 */
+	private JPanel createIncrementPanel() {
 		JPanel incrementDecrementPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; 
@@ -575,56 +559,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		gbc.gridx++;
 		incrementDecrementPanel.add(createButton("-32", e -> calculatorLogic.increment(BigInteger.valueOf(-32))), gbc);
 
-		// Create hashing panel
-		JPanel hashingPanel = createHashingPanel();
-		
-		// Add panels to card layout
-		cardPanel.add(incrementDecrementPanel, "increment");
-		cardPanel.add(hashingPanel, "hashing");
-		
-		// Add tab panel and card panel to main panel
-		mainPanel.add(tabPanel, BorderLayout.NORTH);
-		mainPanel.add(cardPanel, BorderLayout.CENTER);
-
-		toggleButton.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				toggleIncrementPanel(cardPanel, toggleButton);
-			}
-		});
-		
-		// Add mouse listeners for tab switching
-		incrementTab.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				CardLayout cl = (CardLayout)(cardPanel.getLayout());
-				cl.show(cardPanel, "increment");
-				// Update tab styling
-				incrementTab.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createMatteBorder(3, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
-					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-				hashTab.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createMatteBorder(1, 1, 1, 1, GThemeDefaults.Colors.Palette.GRAY),
-					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-			}
-		});
-		
-		hashTab.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				CardLayout cl = (CardLayout)(cardPanel.getLayout());
-				cl.show(cardPanel, "hashing");
-				// Update tab styling
-				incrementTab.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createMatteBorder(1, 1, 1, 1, GThemeDefaults.Colors.Palette.GRAY),
-					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-				hashTab.setBorder(BorderFactory.createCompoundBorder(
-					BorderFactory.createMatteBorder(3, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
-					BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-			}
-		});
-		
-		return mainPanel;
+		return incrementDecrementPanel;
 	}
 	
 	/**
@@ -754,23 +689,6 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	}
 
 	/**
-	 * Toggle the visibility of the increment panel
-	 */
-	private void toggleIncrementPanel(JPanel cardPanel, JLabel toggleButton) {
-		isIncrementPanelCollapsed = !isIncrementPanelCollapsed;
-
-		if (isIncrementPanelCollapsed) {
-			cardPanel.setVisible(false);
-			toggleButton.setText(" \u25B8 ");
-			toggleButton.setToolTipText("Expand Panel");
-		} else {
-			cardPanel.setVisible(true);
-			toggleButton.setText(" \u25BE ");
-			toggleButton.setToolTipText("Collapse Panel");
-		}
-	}
-
-	/**
 	 * Create a button with the specified text and action
 	 */
 	private JButton createButton(String text, ActionListener action) {
@@ -802,49 +720,49 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
     }
 
 	/**
-	    * Show context menu for the display field
-	    */
-	   public void showDisplayContextMenu(MouseEvent e) {
-	       JPopupMenu popup = new JPopupMenu();
-	       BigInteger currentValue = calculatorLogic.getCurrentValue();
-	       
-	       // Jump to Address option (only if valid address)
-	       if (isValidAddress(currentValue)) {
-	           JMenuItem jumpItem = new JMenuItem("Jump to Address");
-	           jumpItem.setToolTipText("Navigate to 0x" + currentValue.toString(16).toUpperCase() + " in the listing");
-	           jumpItem.addActionListener(evt -> provider.navigateToAddress(currentValue));
-	           popup.add(jumpItem);
-	       }
-	       
-	       // Copy Value option
-	       JMenuItem copyItem = new JMenuItem("Copy Value");
-	       copyItem.setToolTipText("Copy current value to clipboard");
-	       copyItem.addActionListener(evt -> copyValueToClipboard());
-	       popup.add(copyItem);
-	       
-	       // Paste Value option
-	       JMenuItem pasteItem = new JMenuItem("Paste Value");
-	       pasteItem.setToolTipText("Paste value from clipboard");
-	       pasteItem.addActionListener(evt -> pasteValueFromClipboard());
-	       popup.add(pasteItem);
-	       
-	       // Mark Value option
-	       JMenuItem markValueItem = new JMenuItem("Mark Value");
-	       markValueItem.addActionListener(evt -> calculatorLogic.markCurrentValue());
-	       popup.add(markValueItem);
-	       
-	       // Recall Value option
-	       if (calculatorLogic.hasMarkedValue()) {
-	           JMenuItem recallValueItem = new JMenuItem("Recall Value");
-	           recallValueItem.addActionListener(evt -> calculatorLogic.recallMarkedValue());
-	           popup.add(recallValueItem);
-	       }
-	       
-	       // Only show popup if it has items
-	       if (popup.getComponentCount() > 0) {
-	           popup.show(displayField, e.getX(), e.getY());
-	       }
-	   }
+	* Show context menu for the display field
+	*/
+	public void showDisplayContextMenu(MouseEvent e) {
+		JPopupMenu popup = new JPopupMenu();
+		BigInteger currentValue = calculatorLogic.getCurrentValue();
+		
+		// Jump to Address option (only if valid address)
+		if (isValidAddress(currentValue)) {
+			JMenuItem jumpItem = new JMenuItem("Jump to Address");
+			jumpItem.setToolTipText("Navigate to 0x" + currentValue.toString(16).toUpperCase() + " in the listing");
+			jumpItem.addActionListener(evt -> provider.navigateToAddress(currentValue));
+			popup.add(jumpItem);
+		}
+		
+		// Copy Value option
+		JMenuItem copyItem = new JMenuItem("Copy Value");
+		copyItem.setToolTipText("Copy current value to clipboard");
+		copyItem.addActionListener(evt -> copyValueToClipboard());
+		popup.add(copyItem);
+		
+		// Paste Value option
+		JMenuItem pasteItem = new JMenuItem("Paste Value");
+		pasteItem.setToolTipText("Paste value from clipboard");
+		pasteItem.addActionListener(evt -> pasteValueFromClipboard());
+		popup.add(pasteItem);
+		
+		// Mark Value option
+		JMenuItem markValueItem = new JMenuItem("Mark Value");
+		markValueItem.addActionListener(evt -> calculatorLogic.markCurrentValue());
+		popup.add(markValueItem);
+		
+		// Recall Value option
+		if (calculatorLogic.hasMarkedValue()) {
+			JMenuItem recallValueItem = new JMenuItem("Recall Value");
+			recallValueItem.addActionListener(evt -> calculatorLogic.recallMarkedValue());
+			popup.add(recallValueItem);
+		}
+		
+		// Only show popup if it has items
+		if (popup.getComponentCount() > 0) {
+			popup.show(displayField, e.getX(), e.getY());
+		}
+	}
 
 	/**
      * Parse the input from the display field and update the calculator value
