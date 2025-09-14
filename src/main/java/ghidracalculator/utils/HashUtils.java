@@ -7,6 +7,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
+import ghidra.program.model.mem.Memory;
+import ghidra.program.model.mem.MemoryAccessException;
+import ghidra.program.model.address.Address;
+import ghidra.program.model.address.AddressFactory;
+import ghidra.program.model.listing.Program;
+
 /**
  * Utility class for common hash function operations used in reverse engineering.
  */
@@ -277,24 +283,31 @@ public class HashUtils {
     
     /**
      * Calculate hash of memory region
+     * @param program The program to read memory from
      * @param startValue Start address value
      * @param length Length in bytes
      * @param algorithm Hash algorithm to use
      * @return HashResult containing the hash
+     * @throws MemoryAccessException if memory cannot be read
      */
-    public static HashResult calculateMemoryHash(BigInteger startValue, int length, 
-                                               HashAlgorithm algorithm) {
-        // Create a byte array representing the memory region
-        byte[] memoryBytes = new byte[length];
-        
-        // Fill with pattern based on start address (for demonstration)
-        // In a real implementation, this would read from actual memory
-        for (int i = 0; i < length; i++) {
-            BigInteger addr = startValue.add(BigInteger.valueOf(i));
-            memoryBytes[i] = addr.byteValue();
+    public static HashResult calculateMemoryHash(Program program, BigInteger startValue, int length,
+                                               HashAlgorithm algorithm) throws MemoryAccessException {
+        try {
+            // Get memory from program
+            Memory memory = program.getMemory();
+            
+            // Create start address
+            AddressFactory addressFactory = program.getAddressFactory();
+            Address startAddress = addressFactory.getDefaultAddressSpace().getAddress(startValue.toString(16));
+            
+            // Read memory bytes
+            byte[] memoryBytes = new byte[length];
+            memory.getBytes(startAddress, memoryBytes);
+            
+            return calculateHash(memoryBytes, algorithm);
+        } catch (Exception e) {
+            throw new MemoryAccessException("Failed to read memory at address " + startValue.toString(16) + ": " + e.getMessage());
         }
-        
-        return calculateHash(memoryBytes, algorithm);
     }
     
     /**
