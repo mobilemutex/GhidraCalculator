@@ -40,6 +40,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	private JLabel[] binaryBits;
 	public JLabel markedValueLabel, markedAddressLabel;
 	private Map<String, JLabel> modeLabels, valueLabels;
+	private boolean isIncrementPanelCollapsed = false;
 	// Bit width values for cycling
 	private static final int[] BIT_WIDTH_VALUES = {8, 16, 32, 64};
 	
@@ -358,7 +359,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	private JPanel createButtonPanel() {
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.insets = new Insets(0, 2, 0, 2);
+		gbc.insets = new Insets(0, 2, 2, 2);
         gbc.fill = GridBagConstraints.BOTH;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -371,7 +372,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 
 		gbc.gridx = 1;
 		gbc.weightx = 1;
-		gbc.insets = new Insets(0, 0, 0, 2);
+		gbc.insets = new Insets(0, 0, 2, 2);
 		JPanel basicPanel = createBasicPanel();
 		buttonPanel.add(basicPanel, gbc);
 		
@@ -500,22 +501,30 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		
 		// Create tab panel for switching between views
 		JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		
+
 		// Create tab labels
-		JLabel incrementTab = new JLabel(" Increment/Decrement ");
+		JLabel toggleButton = new JLabel(" \u25BE ");
+		toggleButton.setOpaque(true);
+		toggleButton.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createMatteBorder(1, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
+				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
+		toggleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+		JLabel incrementTab = new JLabel(" Inc/Dec-Ops ");
 		incrementTab.setOpaque(true);
 		incrementTab.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createMatteBorder(3, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
 				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
 		incrementTab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		
-		JLabel hashTab = new JLabel(" Hashing ");
+		JLabel hashTab = new JLabel(" Hash-Ops ");
 		hashTab.setOpaque(true);
 		hashTab.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createMatteBorder(1, 1, 0, 1, GThemeDefaults.Colors.Palette.GRAY),
+				BorderFactory.createMatteBorder(1, 1, 1, 1, GThemeDefaults.Colors.Palette.GRAY),
 				BorderFactory.createEmptyBorder(2, 5, 2, 5)));
 		hashTab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		
+		tabPanel.add(toggleButton);
 		tabPanel.add(incrementTab);
 		tabPanel.add(hashTab);
 		
@@ -523,24 +532,48 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		JPanel cardPanel = new JPanel(new CardLayout());
 		
 		// Create increment/decrement panel (existing functionality)
-		JPanel incrementDecrementPanel = new JPanel(new GridLayout(3, 4, 2, 2));
+		JPanel incrementDecrementPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; 
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = new Insets(0, 1, 2, 1);
 		
-		// Row 1: Increment operations
-		incrementDecrementPanel.add(createButton("+1", e -> calculatorLogic.increment(BigInteger.ONE)));
-		incrementDecrementPanel.add(createButton("+0x10", e -> calculatorLogic.increment(BigInteger.valueOf(0x10))));
-		incrementDecrementPanel.add(createButton("+0x100", e -> calculatorLogic.increment(BigInteger.valueOf(0x100))));
-		incrementDecrementPanel.add(createButton("+0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(0x1000))));
+		// Rows 1 and 2: Increment operations
+		incrementDecrementPanel.add(createButton("+1", e -> calculatorLogic.increment(BigInteger.ONE)), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+0x10", e -> calculatorLogic.increment(BigInteger.valueOf(0x10))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+0x100", e -> calculatorLogic.increment(BigInteger.valueOf(0x100))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(0x1000))), gbc);
+
+		gbc.gridx = 0; gbc.gridy++;
+		incrementDecrementPanel.add(createButton("+2", e -> calculatorLogic.increment(BigInteger.TWO)), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+4", e -> calculatorLogic.increment(BigInteger.valueOf(4))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+8", e -> calculatorLogic.increment(BigInteger.valueOf(8))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+32", e -> calculatorLogic.increment(BigInteger.valueOf(32))), gbc);
 		
-		// Row 2: Decrement operations
-		incrementDecrementPanel.add(createButton("-1", e -> calculatorLogic.increment(BigInteger.ONE.negate())));
-		incrementDecrementPanel.add(createButton("-0x10", e -> calculatorLogic.increment(BigInteger.valueOf(-0x10))));
-		incrementDecrementPanel.add(createButton("-0x100", e -> calculatorLogic.increment(BigInteger.valueOf(-0x100))));
-		incrementDecrementPanel.add(createButton("-0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(-0x1000))));
-		
-		incrementDecrementPanel.add(new JLabel());
-		incrementDecrementPanel.add(new JLabel());
-		incrementDecrementPanel.add(new JLabel());
-		incrementDecrementPanel.add(new JLabel());
+		// Rows 3 and 4: Decrement operations
+		gbc.gridx = 0; gbc.gridy++;
+		incrementDecrementPanel.add(createButton("-1", e -> calculatorLogic.increment(BigInteger.ONE.negate())), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-0x10", e -> calculatorLogic.increment(BigInteger.valueOf(-0x10))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-0x100", e -> calculatorLogic.increment(BigInteger.valueOf(-0x100))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(-0x1000))), gbc);
+
+		gbc.gridx = 0; gbc.gridy++;
+		incrementDecrementPanel.add(createButton("-2", e -> calculatorLogic.increment(BigInteger.TWO.negate())), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-4", e -> calculatorLogic.increment(BigInteger.valueOf(-4))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-8", e -> calculatorLogic.increment(BigInteger.valueOf(-8))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-32", e -> calculatorLogic.increment(BigInteger.valueOf(-32))), gbc);
 
 		// Create hashing panel
 		JPanel hashingPanel = createHashingPanel();
@@ -552,6 +585,13 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		// Add tab panel and card panel to main panel
 		mainPanel.add(tabPanel, BorderLayout.NORTH);
 		mainPanel.add(cardPanel, BorderLayout.CENTER);
+
+		toggleButton.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				toggleIncrementPanel(cardPanel, toggleButton);
+			}
+		});
 		
 		// Add mouse listeners for tab switching
 		incrementTab.addMouseListener(new MouseAdapter() {
@@ -711,6 +751,23 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		panel.add(calculateButton, gbc);
 		
 		return panel;
+	}
+
+	/**
+	 * Toggle the visibility of the increment panel
+	 */
+	private void toggleIncrementPanel(JPanel cardPanel, JLabel toggleButton) {
+		isIncrementPanelCollapsed = !isIncrementPanelCollapsed;
+
+		if (isIncrementPanelCollapsed) {
+			cardPanel.setVisible(false);
+			toggleButton.setText(" \u25B8 ");
+			toggleButton.setToolTipText("Expand Panel");
+		} else {
+			cardPanel.setVisible(true);
+			toggleButton.setText(" \u25BE ");
+			toggleButton.setToolTipText("Collapse Panel");
+		}
 	}
 
 	/**
