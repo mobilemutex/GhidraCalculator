@@ -2,9 +2,8 @@
 - Add additional decompiler actions
 
 Feature Additions:
-- sign extension and 2's complement
-- endianness conversion
-- hashing operations
++ 2's complement
+  - Allow for negative display values to be converted to twos complement?
 - exporting/importing history windows
     - saving/loading sessions
 - batch operations on multiple selected values

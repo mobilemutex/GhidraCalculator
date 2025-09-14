@@ -19,6 +19,7 @@ import ghidracalculator.CalculatorLogic;
 import ghidracalculator.CalculatorProvider;
 import ghidracalculator.CalculatorModel;
 import ghidracalculator.CalculatorPlugin;
+import ghidracalculator.utils.HashUtils;
 
 /**
  * Calculator UI
@@ -33,10 +34,16 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	
 	// GUI Components
 	private JTextField displayField;
+	private JLabel bitWidthLabel;
 	private JLabel hexModeLabel, decModeLabel, octModeLabel, binModeLabel;
 	public JLabel hexValueLabel, decValueLabel, octValueLabel, binValueLabel;
+	private JLabel[] binaryBits;
 	public JLabel markedValueLabel, markedAddressLabel;
 	private Map<String, JLabel> modeLabels, valueLabels;
+	// Bit width values for cycling
+	private static final int[] BIT_WIDTH_VALUES = {8, 16, 32, 64};
+
+	public JTabbedPane extrasPanel;
 	
 	/**
 	 * Constructor
@@ -78,20 +85,28 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 	 * Build the main calculator panel
 	 */
 	private void initializeUI() {
-		JPanel mainPanel = new JPanel(new BorderLayout());
-		
+		JPanel mainPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridx = 0; gbc.gridy = 0;
+		gbc.weighty = 0; gbc.weightx = 1;
+
 		// Create display panel
 		JPanel displayPanel = createDisplayPanel();
-		mainPanel.add(displayPanel, BorderLayout.NORTH);
+		mainPanel.add(displayPanel, gbc);
 
 		// Create button panel
 		JPanel buttonPanel = createButtonPanel();
-		mainPanel.add(buttonPanel, BorderLayout.CENTER);
+		gbc.gridy++;
+		gbc.weighty = 0.7;
+		mainPanel.add(buttonPanel, gbc);
 		
 		// Create increment panel
-		JPanel incrementPanel = createIncrementPanel();
-		mainPanel.add(incrementPanel, BorderLayout.SOUTH);
-
+		JPanel incrementPanel = createExtrasPanel();
+		gbc.gridy++;
+		gbc.weighty = 0.01;
+		mainPanel.add(incrementPanel, gbc);
+		
         add(mainPanel, BorderLayout.CENTER);
         
         // Initialize display with default values
@@ -133,6 +148,76 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 
 		// Main display field
 		gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2; gbc.weightx = 1.0;
+		panel.add(buildInputDisplayField(), gbc);
+		
+		// Multi-base display labels
+		gbc.gridwidth = 1; 
+
+		String[] modes = {"HEX", "DEC", "OCT", "BIN"};
+		for (int i = 0; i < modes.length; i++) {
+            String mode = modes[i];
+
+			if (mode == "BIN") {
+				gbc.anchor = GridBagConstraints.NORTHWEST;
+				gbc.gridx = 0; gbc.gridy = 1 + i; gbc.weightx = 0.0;
+				panel.add(modeLabels.get(mode), gbc);
+
+				gbc.gridx = 1; gbc.weightx = 1.0; 
+				gbc.fill = GridBagConstraints.HORIZONTAL;
+				gbc.anchor = GridBagConstraints.WEST;
+
+				// Wrap the binary panel in a BorderLayout to pin the left side during resizing
+				JPanel binaryDisplayWrapper = new JPanel(new BorderLayout());
+				binaryDisplayWrapper.add(buildClickableBinaryDisplay(), BorderLayout.WEST);
+				panel.add(binaryDisplayWrapper, gbc);
+			}
+			else {
+				gbc.anchor = GridBagConstraints.WEST;
+				gbc.gridx = 0; gbc.gridy = 1 + i; gbc.weightx = 0.0;
+				panel.add(modeLabels.get(mode), gbc);
+
+				gbc.gridx = 1; gbc.weightx = 1.0; 
+				gbc.fill = GridBagConstraints.HORIZONTAL;
+				panel.add(valueLabels.get(mode), gbc);
+			}
+			
+		}
+
+		// Add mouse listeners to mode labels
+        for (Map.Entry<String, JLabel> entry : modeLabels.entrySet()) {
+            String mode = entry.getKey();
+            JLabel label = entry.getValue();
+            
+            label.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    setCurrentMode(mode);
+                }
+            });
+        }
+
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+
+		// Status labels for marked values
+		gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2; gbc.weightx = 1.0;
+		markedValueLabel = new JLabel("Marked Value: None");
+		markedValueLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
+		//markedValueLabel.setForeground(Color.BLUE);
+		panel.add(markedValueLabel, gbc);
+		
+		gbc.gridy++;
+		markedAddressLabel = new JLabel("Marked Address: None");
+		markedAddressLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
+		//markedAddressLabel.setForeground(Color.BLUE);
+		panel.add(markedAddressLabel, gbc);
+		
+		return panel;
+	}
+
+	private JPanel buildInputDisplayField() {
+		JPanel panel = new JPanel();
+		panel.setLayout(new OverlayLayout(panel));
+
 		displayField = new JTextField();
 		displayField.setFont(new Font(Font.MONOSPACED, Font.BOLD, 16));
 		displayField.setHorizontalAlignment(JTextField.RIGHT);
@@ -155,22 +240,22 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 				}
 			}
 		});
-		
+
 		// Add keyboard input support
 		displayField.addKeyListener(new KeyListener() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				handleKeyPress(e);
+				//Not used
 			}
 			
 			@Override
 			public void keyReleased(KeyEvent e) {
-				// Not used
+				handleKeyPress(e);
 			}
 			
 			@Override
 			public void keyTyped(KeyEvent e) {
-				// Not used - we handle in keyPressed
+				// Not used
 			}
 		});
 		
@@ -178,56 +263,103 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		displayField.addActionListener(e -> {
 			parseDisplayInput();
 		});
+
+		bitWidthLabel = new JLabel("32-bit ");
+		bitWidthLabel.setForeground(GThemeDefaults.Colors.Palette.GRAY);
+		bitWidthLabel.setHorizontalAlignment(JLabel.LEFT);
 		
-		panel.add(displayField, gbc);
-		
-		// Multi-base display labels
-		gbc.gridwidth = 1; 
+		// Add mouse listener to toggle bit width
+		bitWidthLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				cycleBitWidth();
+			}
+		});
+		bitWidthLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		bitWidthLabel.setToolTipText("Bit width - Used for 2's Complement Operations");
 
-		String[] modes = {"HEX", "DEC", "OCT", "BIN"};
-		for (int i = 0; i < modes.length; i++) {
-            String mode = modes[i];
+		displayField.setAlignmentX(0.0f);
+        displayField.setAlignmentY(0.0f);
+        bitWidthLabel.setAlignmentX(0.0f);
+        bitWidthLabel.setAlignmentY(0.0f);
+        
+        // Add components (order matters - label on top)
+        panel.add(bitWidthLabel);
+        panel.add(displayField);
 
-			gbc.gridx = 0; gbc.gridy = 1 + i; gbc.weightx = 0.0;
-			panel.add(modeLabels.get(mode), gbc);
-
-			gbc.gridx = 1; gbc.weightx = 1.0;
-			panel.add(valueLabels.get(mode), gbc);
-		}
-
-		// Add mouse listeners to mode labels
-        for (Map.Entry<String, JLabel> entry : modeLabels.entrySet()) {
-            String mode = entry.getKey();
-            JLabel label = entry.getValue();
-            
-            label.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    setCurrentMode(mode);
-                }
-            });
-        }
-
-		// Status labels for marked values
-		gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2; gbc.weightx = 1.0;
-		markedValueLabel = new JLabel("Marked Value: None");
-		markedValueLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
-		//markedValueLabel.setForeground(Color.BLUE);
-		panel.add(markedValueLabel, gbc);
-		
-		gbc.gridy = 6;
-		markedAddressLabel = new JLabel("Marked Address: None");
-		markedAddressLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 10));
-		//markedAddressLabel.setForeground(Color.BLUE);
-		panel.add(markedAddressLabel, gbc);
-		
 		return panel;
 	}
+
+	/**
+     * Build clickable binary display with two rows (63-32, 31-0) and nibble grouping
+     */
+    private JPanel buildClickableBinaryDisplay() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(1, 0, 1, 0);
+		gbc.anchor = GridBagConstraints.WEST;
+        
+        // Initialize binary bits array (64 bits)
+        binaryBits = new JLabel[64];
+        
+        // Top row: bits 63-32 (left to right)
+        gbc.gridy = 0;
+        int gridX = 0;
+        for (int bitPos = 63; bitPos >= 32; bitPos--) {
+            // Add space every 4 bits (nibble grouping)
+            if ((63 - bitPos) % 4 == 0 && bitPos != 63) {
+                gbc.gridx = gridX++;
+                JLabel space = new JLabel(" ");
+                panel.add(space, gbc);
+            }
+            
+            gbc.gridx = gridX++;
+            JLabel bitButton = createBitButton(bitPos);
+            binaryBits[bitPos] = bitButton;
+            panel.add(bitButton, gbc);
+        }
+
+        // Bottom row: bits 31-0 (left to right)
+        gbc.gridy = 1;
+        gridX = 0;
+        for (int bitPos = 31; bitPos >= 0; bitPos--) {
+            // Add space every 4 bits (nibble grouping)
+            if ((31 - bitPos) % 4 == 0 && bitPos != 31) {
+                gbc.gridx = gridX++;
+                JLabel space = new JLabel(" ");
+                panel.add(space, gbc);
+            }
+            
+            gbc.gridx = gridX++;
+            JLabel bitButton = createBitButton(bitPos);
+            binaryBits[bitPos] = bitButton;
+            panel.add(bitButton, gbc);
+        }
+        
+        return panel;
+    }
+    
+    /**
+     * Create a clickable bit button JLabel
+     */
+    private JLabel createBitButton(int bitPosition) {
+        JLabel bitButton = new JLabel("0");
+        bitButton.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        bitButton.setToolTipText("Bit " + bitPosition + " - Click to flip");
+
+        bitButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    flipBit(bitPosition);
+                }
+			});
+        return bitButton;
+    }
 
 	private JPanel createButtonPanel() {
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.insets = new Insets(0, 2, 0, 2);
+		gbc.insets = new Insets(0, 2, 2, 2);
         gbc.fill = GridBagConstraints.BOTH;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -240,7 +372,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 
 		gbc.gridx = 1;
 		gbc.weightx = 1;
-		gbc.insets = new Insets(0, 0, 0, 2);
+		gbc.insets = new Insets(0, 0, 2, 2);
 		JPanel basicPanel = createBasicPanel();
 		buttonPanel.add(basicPanel, gbc);
 		
@@ -328,7 +460,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 							  "NOR", "MOD", 
 							  "RoR", "RoL",
 							  "<<", ">>", 
-							  "+/-" };
+							  "+/-", "2's"};
 
 		for (String op : operators) {
 			JButton btn = new JButton(op);
@@ -344,29 +476,214 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
                 col = 0;
                 row++;
             }
-		}
+		}		
+
+		String op = "Swap Endianness";
+		JButton endianBtn = new JButton(op);
+		endianBtn.setMargin(new Insets(8, 6, 8, 6));
+		endianBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+		endianBtn.addActionListener(e -> calculatorLogic.performOperation(op));
+		gbc.gridx = 0;
+		gbc.gridy++;
+		gbc.gridwidth = 2;
+		operationsPanel.add(endianBtn, gbc);
 
 		return operationsPanel;
 	}
 
 	/**
-	 * Create the increment/decrement and bitwise operations panel
+	 * Create the extras panel
+	 */
+	private JPanel createExtrasPanel() {
+		// Create main panel with BorderLayout
+		JPanel mainPanel = new JPanel(new BorderLayout());
+		mainPanel.setBorder(BorderFactory.createTitledBorder(""));
+		
+		extrasPanel = new JTabbedPane();
+
+		// Create tab panels
+		JPanel incrementDecrementPanel = createIncrementPanel();
+		JPanel hashingPanel = createHashingPanel();
+
+		extrasPanel.addTab("Inc/Dec-Ops", incrementDecrementPanel);
+		extrasPanel.addTab("Hash-Ops", hashingPanel);
+		mainPanel.add(extrasPanel, BorderLayout.CENTER);
+		
+		return mainPanel;
+	}
+
+	/**
+	 * Create the Increment/Decrement panel
 	 */
 	private JPanel createIncrementPanel() {
-		JPanel panel = new JPanel(new GridLayout(2, 4, 2, 2));
-		panel.setBorder(BorderFactory.createTitledBorder("Quick Operations"));
+		JPanel incrementDecrementPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; 
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = new Insets(0, 1, 2, 1);
 		
-		// Row 1: Increment operations
-		panel.add(createButton("+1", e -> calculatorLogic.increment(BigInteger.ONE)));
-		panel.add(createButton("+0x10", e -> calculatorLogic.increment(BigInteger.valueOf(0x10))));
-		panel.add(createButton("+0x100", e -> calculatorLogic.increment(BigInteger.valueOf(0x100))));
-		panel.add(createButton("+0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(0x1000))));
+		// Rows 1 and 2: Increment operations
+		incrementDecrementPanel.add(createButton("+1", e -> calculatorLogic.increment(BigInteger.ONE)), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+0x10", e -> calculatorLogic.increment(BigInteger.valueOf(0x10))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+0x100", e -> calculatorLogic.increment(BigInteger.valueOf(0x100))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(0x1000))), gbc);
+
+		gbc.gridx = 0; gbc.gridy++;
+		incrementDecrementPanel.add(createButton("+2", e -> calculatorLogic.increment(BigInteger.TWO)), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+4", e -> calculatorLogic.increment(BigInteger.valueOf(4))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+8", e -> calculatorLogic.increment(BigInteger.valueOf(8))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("+32", e -> calculatorLogic.increment(BigInteger.valueOf(32))), gbc);
 		
-		// Row 2: Decrement operations
-		panel.add(createButton("-1", e -> calculatorLogic.increment(BigInteger.ONE.negate())));
-		panel.add(createButton("-0x10", e -> calculatorLogic.increment(BigInteger.valueOf(-0x10))));
-		panel.add(createButton("-0x100", e -> calculatorLogic.increment(BigInteger.valueOf(-0x100))));
-		panel.add(createButton("-0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(-0x1000))));
+		// Rows 3 and 4: Decrement operations
+		gbc.gridx = 0; gbc.gridy++;
+		incrementDecrementPanel.add(createButton("-1", e -> calculatorLogic.increment(BigInteger.ONE.negate())), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-0x10", e -> calculatorLogic.increment(BigInteger.valueOf(-0x10))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-0x100", e -> calculatorLogic.increment(BigInteger.valueOf(-0x100))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-0x1000", e -> calculatorLogic.increment(BigInteger.valueOf(-0x1000))), gbc);
+
+		gbc.gridx = 0; gbc.gridy++;
+		incrementDecrementPanel.add(createButton("-2", e -> calculatorLogic.increment(BigInteger.TWO.negate())), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-4", e -> calculatorLogic.increment(BigInteger.valueOf(-4))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-8", e -> calculatorLogic.increment(BigInteger.valueOf(-8))), gbc);
+		gbc.gridx++;
+		incrementDecrementPanel.add(createButton("-32", e -> calculatorLogic.increment(BigInteger.valueOf(-32))), gbc);
+
+		return incrementDecrementPanel;
+	}
+	
+	/**
+	* Create the hashing operations panel
+	*/
+	private JPanel createHashingPanel() {
+		JPanel panel = new JPanel(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.insets = new Insets(2, 2, 2, 2);
+		gbc.anchor = GridBagConstraints.WEST;
+		
+		// Start address label and field
+		gbc.gridx = 0; gbc.gridy = 0;
+		panel.add(new JLabel("Start Address:"), gbc);
+		
+		gbc.gridx = 1; gbc.weightx = .5; gbc.fill = GridBagConstraints.HORIZONTAL;
+		JTextField addressField = new JTextField(10);
+		addressField.setToolTipText("Enter start address in hex format (e.g., 0x1000)");
+		panel.add(addressField, gbc);
+		
+		// Button to pull address from calculator display
+		gbc.gridx = 2; gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE;
+		JButton pullAddressButton = new JButton("From Display");
+		pullAddressButton.setToolTipText("Pull start address from calculator display");
+		pullAddressButton.addActionListener(e -> {
+			// Get current value from calculator and set it in the address field
+			BigInteger currentValue = calculatorLogic.getCurrentValue();
+			addressField.setText("0x" + currentValue.toString(16).toUpperCase());
+		});
+		panel.add(pullAddressButton, gbc);
+		
+		// Length label and field
+		gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
+		panel.add(new JLabel("Length:"), gbc);
+		
+		gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+		JTextField lengthField = new JTextField(10);
+		lengthField.setToolTipText("Enter length in hex format");
+		panel.add(lengthField, gbc);
+
+		// Button to pull length from calculator display
+		gbc.gridx = 2; gbc.weightx = 0.0; gbc.fill = GridBagConstraints.NONE;
+		JButton pullLengthButton = new JButton("From Display");
+		pullLengthButton.setToolTipText("Pull length from calculator display");
+		pullLengthButton.addActionListener(e -> {
+			// Get current value from calculator and set it in the address field
+			BigInteger currentValue = calculatorLogic.getCurrentValue();
+			lengthField.setText("0x" + currentValue.toString(16).toUpperCase());
+		});
+		panel.add(pullLengthButton, gbc);
+		
+		// Calculate button
+		gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.NONE;
+		gbc.anchor = GridBagConstraints.CENTER;
+		JButton calculateButton = new JButton("Calculate Hashes");
+		calculateButton.setToolTipText("Calculate all supported hash algorithms for the specified memory region");
+		calculateButton.addActionListener(e -> {
+			try {
+				// Parse address
+				String addressText = addressField.getText().trim();
+				if (addressText.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Please enter a start address", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				BigInteger startAddress;
+				if (addressText.startsWith("0x") || addressText.startsWith("0X")) {
+					startAddress = new BigInteger(addressText.substring(2), 16);
+				} else {
+					startAddress = new BigInteger(addressText, 16);
+				}
+				
+				// Parse length
+				String lengthText = lengthField.getText().trim();
+				if (lengthText.isEmpty()) {
+					JOptionPane.showMessageDialog(this, "Please enter a length", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				BigInteger lengthHex;
+				if (lengthText.startsWith("0x") || lengthText.startsWith("0X")) {
+					lengthHex = new BigInteger(lengthText.substring(2), 16);
+				} else {
+					lengthHex = new BigInteger(lengthText, 16);
+				}
+
+				int length = lengthHex.intValue();
+				if (length <= 0) {
+					JOptionPane.showMessageDialog(this, "Length must be positive", "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				
+				// Calculate hashes for all supported algorithms
+				StringBuilder result = new StringBuilder();
+				result.append("\n=== Hash Calculations ===\n");
+				result.append("Start Address: 0x").append(startAddress.toString(16).toUpperCase()).append("\n");
+				result.append("Length: ").append(length).append(" bytes\n\n");
+				
+				// Calculate memory hash for each algorithm
+				HashUtils.HashAlgorithm[] algorithms = HashUtils.HashAlgorithm.values();
+				for (HashUtils.HashAlgorithm algorithm : algorithms) {
+					try {
+						HashUtils.HashResult hashResult = HashUtils.calculateMemoryHash(startAddress, length, algorithm);
+						result.append(algorithm.getAlgorithmName()).append(": ").append(hashResult.toHexString().toUpperCase()).append("\n");
+					} catch (Exception ex) {
+						result.append(algorithm.getAlgorithmName()).append(": ERROR - ").append(ex.getMessage()).append("\n");
+					}
+				}
+				
+				// Output to console
+				var consoleService = provider.plugin.getTool().getService(ghidra.app.services.ConsoleService.class);
+				if (consoleService != null) {
+					consoleService.println(result.toString());
+				} else {
+					// Fallback to JOptionPane if console service is not available
+					JOptionPane.showMessageDialog(this, result.toString(), "Hash Results", JOptionPane.INFORMATION_MESSAGE);
+				}
+			} catch (NumberFormatException ex) {
+				JOptionPane.showMessageDialog(this, "Invalid number format: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(this, "Error calculating hashes: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		});
+		panel.add(calculateButton, gbc);
 		
 		return panel;
 	}
@@ -403,49 +720,49 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
     }
 
 	/**
-	    * Show context menu for the display field
-	    */
-	   public void showDisplayContextMenu(MouseEvent e) {
-	       JPopupMenu popup = new JPopupMenu();
-	       BigInteger currentValue = calculatorLogic.getCurrentValue();
-	       
-	       // Jump to Address option (only if valid address)
-	       if (isValidAddress(currentValue)) {
-	           JMenuItem jumpItem = new JMenuItem("Jump to Address");
-	           jumpItem.setToolTipText("Navigate to 0x" + currentValue.toString(16).toUpperCase() + " in the listing");
-	           jumpItem.addActionListener(evt -> provider.navigateToAddress(currentValue));
-	           popup.add(jumpItem);
-	       }
-	       
-	       // Copy Value option
-	       JMenuItem copyItem = new JMenuItem("Copy Value");
-	       copyItem.setToolTipText("Copy current value to clipboard");
-	       copyItem.addActionListener(evt -> copyValueToClipboard());
-	       popup.add(copyItem);
-	       
-	       // Paste Value option
-	       JMenuItem pasteItem = new JMenuItem("Paste Value");
-	       pasteItem.setToolTipText("Paste value from clipboard");
-	       pasteItem.addActionListener(evt -> pasteValueFromClipboard());
-	       popup.add(pasteItem);
-	       
-	       // Mark Value option
-	       JMenuItem markValueItem = new JMenuItem("Mark Value");
-	       markValueItem.addActionListener(evt -> calculatorLogic.markCurrentValue());
-	       popup.add(markValueItem);
-	       
-	       // Recall Value option
-	       if (calculatorLogic.hasMarkedValue()) {
-	           JMenuItem recallValueItem = new JMenuItem("Recall Value");
-	           recallValueItem.addActionListener(evt -> calculatorLogic.recallMarkedValue());
-	           popup.add(recallValueItem);
-	       }
-	       
-	       // Only show popup if it has items
-	       if (popup.getComponentCount() > 0) {
-	           popup.show(displayField, e.getX(), e.getY());
-	       }
-	   }
+	* Show context menu for the display field
+	*/
+	public void showDisplayContextMenu(MouseEvent e) {
+		JPopupMenu popup = new JPopupMenu();
+		BigInteger currentValue = calculatorLogic.getCurrentValue();
+		
+		// Jump to Address option (only if valid address)
+		if (isValidAddress(currentValue)) {
+			JMenuItem jumpItem = new JMenuItem("Jump to Address");
+			jumpItem.setToolTipText("Navigate to 0x" + currentValue.toString(16).toUpperCase() + " in the listing");
+			jumpItem.addActionListener(evt -> provider.navigateToAddress(currentValue));
+			popup.add(jumpItem);
+		}
+		
+		// Copy Value option
+		JMenuItem copyItem = new JMenuItem("Copy Value");
+		copyItem.setToolTipText("Copy current value to clipboard");
+		copyItem.addActionListener(evt -> copyValueToClipboard());
+		popup.add(copyItem);
+		
+		// Paste Value option
+		JMenuItem pasteItem = new JMenuItem("Paste Value");
+		pasteItem.setToolTipText("Paste value from clipboard");
+		pasteItem.addActionListener(evt -> pasteValueFromClipboard());
+		popup.add(pasteItem);
+		
+		// Mark Value option
+		JMenuItem markValueItem = new JMenuItem("Mark Value");
+		markValueItem.addActionListener(evt -> calculatorLogic.markCurrentValue());
+		popup.add(markValueItem);
+		
+		// Recall Value option
+		if (calculatorLogic.hasMarkedValue()) {
+			JMenuItem recallValueItem = new JMenuItem("Recall Value");
+			recallValueItem.addActionListener(evt -> calculatorLogic.recallMarkedValue());
+			popup.add(recallValueItem);
+		}
+		
+		// Only show popup if it has items
+		if (popup.getComponentCount() > 0) {
+			popup.show(displayField, e.getX(), e.getY());
+		}
+	}
 
 	/**
      * Parse the input from the display field and update the calculator value
@@ -536,7 +853,32 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
         String paddedBinary = "0".repeat(padLen) + binaryStr;
         String binFormatted = paddedBinary.replaceAll("(.{4})", "$1 ").trim();
         binValueLabel.setText(sign + binFormatted);
+
+		// Pad to 64 bits
+        while (binaryStr.length() < 64) {
+            binaryStr = "0" + binaryStr;
+        }
+        
+        // Update bit buttons
+        for (int i = 0; i < 64; i++) {
+            char bitChar = i < binaryStr.length() ? 
+                          binaryStr.charAt(binaryStr.length() - 1 - i) : '0';
+            
+            binaryBits[i].setText(String.valueOf(bitChar));
+        }
 	}
+
+	/**
+     * Flip a specific bit in the current value
+     */
+    private void flipBit(int bitPosition) {
+        BigInteger bitMask = BigInteger.ONE.shiftLeft(bitPosition);
+
+		BigInteger currentValue = calculatorLogic.getCurrentValue();
+        calculatorLogic.setCurrentValue(currentValue.xor(bitMask));
+        calculatorLogic.setNewNumber(false);
+        updateDisplay();
+    }
 
 	/**
 	* Update the display with current value in all number bases
@@ -576,6 +918,9 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		
 		// Update marked value and address labels
 		updateMarkedLabels();
+		
+		// Update bit width label
+		bitWidthLabel.setText(" " + calculatorLogic.getBitWidth() + "-bit ");
 		
 		// Update address validation info in tooltip
 		String addressInfo = getAddressInfo(currentValue);
@@ -627,23 +972,46 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 		}
        }
        
-       /**
-        * Check if a value represents a valid address in the current program
-        */
-       private boolean isValidAddress(BigInteger value) {
-           try {
-               if (plugin.getCurrentProgram() == null) {
-                   return false;
-               }
-               
-               var addressFactory = plugin.getCurrentProgram().getAddressFactory();
-               var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
-               
-               return plugin.getCurrentProgram().getMemory().contains(address);
-           } catch (Exception e) {
-               return false;
-           }
-       }
+	/**
+	* Check if a value represents a valid address in the current program
+	*/
+	private boolean isValidAddress(BigInteger value) {
+		try {
+			if (plugin.getCurrentProgram() == null) {
+				return false;
+			}
+			
+			var addressFactory = plugin.getCurrentProgram().getAddressFactory();
+			var address = addressFactory.getDefaultAddressSpace().getAddress(value.longValue());
+			
+			return plugin.getCurrentProgram().getMemory().contains(address);
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Cycle through bit width values (8, 16, 32, 64)
+	*/
+	private void cycleBitWidth() {
+	int currentBitWidth = calculatorLogic.getBitWidth();
+	int nextBitWidth = BIT_WIDTH_VALUES[0]; // Default to first value
+	
+	// Find the next bit width in the cycle
+	for (int i = 0; i < BIT_WIDTH_VALUES.length; i++) {
+	if (BIT_WIDTH_VALUES[i] == currentBitWidth) {
+		// Get the next value, or wrap to the first if we're at the last
+		nextBitWidth = BIT_WIDTH_VALUES[(i + 1) % BIT_WIDTH_VALUES.length];
+		break;
+	}
+	}
+	
+	// Update the model with the new bit width
+	calculatorLogic.setBitWidth(nextBitWidth);
+	
+	// Update the display to reflect the change
+	updateDisplay();
+	}
 
 	/**
      * Copy current value to clipboard
@@ -704,7 +1072,22 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
                 return;
             case KeyEvent.VK_BACK_SPACE:
             case KeyEvent.VK_DELETE:
-                // Allow normal backspace/delete behavior
+                // Let the text field process the backspace/delete key first
+                SwingUtilities.invokeLater(() -> {
+                    // Check what the text is after the deletion
+                    String textAfterDeletion = displayField.getText();
+                    // If the text is now an invalid prefix, clear the field
+                    if (textAfterDeletion.equals("0x") || textAfterDeletion.equals("0X") ||
+                        textAfterDeletion.equals("0b") || textAfterDeletion.equals("0B") ||
+                        (textAfterDeletion.equals("0") && calculatorLogic.getInputMode().equals("OCT"))) {
+                        calculatorLogic.clearCalculator();
+                        updateDisplay();
+                    } else {
+                        // Otherwise, parse the input normally
+                        parseDisplayInput();
+                    }
+                });
+                e.consume();
                 return;
         }
         
@@ -738,6 +1121,8 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
             e.consume();
         }
         // For other characters, let the text field handle them normally (This is kind of broken and clunky)
+		parseDisplayInput();
+		e.consume();
     }
     
     /**

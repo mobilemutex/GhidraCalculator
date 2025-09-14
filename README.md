@@ -11,10 +11,13 @@ A Calculator plugin for Ghidra that adds a GUI calculator and right-click option
 ## Features
 
 - **Multi-base Display**: Simultaneous hex, decimal, binary, and octal display
+- **Clickable Binary Display**: Click on individual bits to flip from 0 to 1 and vice versa
 - **Input Mode Switching**: Switch between hex/dec/bin/oct input modes
-- **Standard Operations**: Addition, subtraction, multiplication, division, modulo, flip sign
+- **Standard Operations**: Addition, subtraction, multiplication, division, modulo, flip sign, 2's complement conversion, endian swapping
 - **Bitwise Operations**: AND, OR, XOR, NOT, NOR, Rotate, Shift
-- **Quick Increment/Decrement**: ±1, ±0x10, ±0x100, ±0x1000 buttons
+- **Collapsable Extras Panel**: Collapsable extras panel with quick operations and hash calculations
+- **Quick Increment/Decrement**: ±1, ±2, ±4, ±8, ±32, ±0x10, ±0x100, ±0x1000 buttons
+- **Hash Calculations**: Calculate 28 different hash types for a range of memory
 - **Value Marking**: Mark and recall values
 - **History Window**: See previous calculations
   - Double-click to jump to resulting address if it's a valid address
@@ -27,6 +30,7 @@ A Calculator plugin for Ghidra that adds a GUI calculator and right-click option
     - Mark addresses for distance calculation
     - Mark values for comparison operations
     - Perform addition, subtraction, and xor'ing of marked values
+    - Calculate hashes for a selection of memory
   - Right click in decompiler to:
     - Add constants to calculator
     - Mark constants
@@ -36,6 +40,10 @@ Submit new feature ideas as a Github issue and I will implement them!
 ## Screenshots
 
 ![](screenshots/ghidraCalcFullScreenshot.PNG)
+
+![](screenshots/hashOpsPanel.png)
+
+![](screenshots/hashCalcOutput.png)
 
 ## Installation
 

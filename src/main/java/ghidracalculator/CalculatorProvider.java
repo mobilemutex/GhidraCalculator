@@ -4,13 +4,17 @@ import java.math.BigInteger;
 
 import javax.swing.*;
 
+import docking.ActionContext;
 import docking.ComponentProvider;
 import docking.action.DockingAction;
+import docking.action.ToggleDockingAction;
 import docking.action.ToolBarData;
 import ghidra.app.services.GoToService;
+import ghidra.app.util.HelpTopics;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressFactory;
 import ghidra.program.util.ProgramLocation;
+import ghidra.util.HelpLocation;
 import ghidracalculator.resources.GhidraCalcIcons;
 import resources.ResourceManager;
 import ghidracalculator.ui.CalculatorUI;
@@ -25,6 +29,7 @@ public class CalculatorProvider extends ComponentProvider {
 	public CalculatorPlugin plugin;
 	private JComponent mainPanel;
 	private CalculatorUI ui;
+	private ToggleDockingAction toggleExtrasAction;
 	
 	// Utility classes
 	private CalculatorLogic calculatorLogic;
@@ -80,6 +85,10 @@ public class CalculatorProvider extends ComponentProvider {
 		clearAction.setDescription("Clear the calculator");
 		clearAction.setToolBarData(new ToolBarData(ResourceManager.loadImage("images/erase16.png"), null));
 		addLocalAction(clearAction);
+
+		// Toolbar button to toggle the extras panel
+		toggleExtrasAction = new ToggleExtrasAction();
+		addLocalAction(toggleExtrasAction);
 	}
 
 	/**
@@ -146,5 +155,27 @@ public class CalculatorProvider extends ComponentProvider {
 			throw new IllegalArgumentException("Operation cannot be null");
 		}
 		plugin.getHistoryProvider().addToHistory(value, operation);
+	}
+
+	// Extras Panel Toggle Action Class
+	private class ToggleExtrasAction extends ToggleDockingAction {
+		ToggleExtrasAction() {
+			super("Show Extras", CalculatorProvider.this.getOwner());
+			setEnabled(true);
+			setToolBarData(new ToolBarData(ResourceManager.loadImage("images/Plus2.png"), null));
+			setSelected(true);
+
+			setHelpLocation(new HelpLocation(HelpTopics.CODE_BROWSER, "Hover"));
+			setExtrasVisible(true);
+		}
+
+		@Override
+		public void actionPerformed(ActionContext context) {
+			setExtrasVisible(isSelected());
+		}
+
+		private void setExtrasVisible(boolean enabled) {
+			ui.extrasPanel.setVisible(enabled);
+		}
 	}
 }

@@ -54,4 +54,5 @@ buildExtension.exclude 'build/**'
 buildExtension.exclude '.git/**'
 buildExtension.exclude 'gradle.properties'
 buildExtension.exclude '.github/**'
+buildExtension.exclude 'TODO'
 

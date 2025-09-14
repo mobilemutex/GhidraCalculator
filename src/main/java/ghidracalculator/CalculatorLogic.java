@@ -3,6 +3,7 @@ package ghidracalculator;
 import java.math.BigInteger;
 
 import ghidra.app.services.ConsoleService;
+import ghidracalculator.utils.NumberUtils;
 
 /**
  * Calculator Logic class to handle core arithmetic operations and state management
@@ -82,6 +83,14 @@ public class CalculatorLogic {
     
     public void setMarkedAddress(long address) {
         model.setMarkedAddress(address);
+    }
+
+    public void setBitWidth(int bitWidth) {
+        model.setBitWidth(bitWidth);
+    }
+
+    public int getBitWidth() {
+        return model.getBitWidth();
     }
     
     /**
@@ -259,6 +268,12 @@ public class CalculatorLogic {
    case "+/-":
     flipSign();
     break;
+   case "2's":
+    performTwosComplement();
+    break;
+   case "Swap Endianness":
+    performEndiannessSwap();
+    break;
    case "=":
     performEquals();
     break;
@@ -407,6 +422,47 @@ public class CalculatorLogic {
         String operationString = String.format("NOT %s",
             previousValue.toString(16).toUpperCase());
         provider.addToHistory(model.getCurrentValue(), operationString);
+    }
+
+    /** 
+     * Perform 2's complement operation
+     */
+    public void performTwosComplement() {
+        BigInteger complement = NumberUtils.twosComplement(model.getCurrentValue(), model.getBitWidth());
+
+        model.setCurrentValue(complement);
+        model.setNewNumber(false);
+    }
+
+    /**
+     * Perform endianness swap based on bitwidth setting
+     */
+    public void performEndiannessSwap(){
+        BigInteger currentValue = model.getCurrentValue();
+        int bitWidth = model.getBitWidth();
+        
+        // Validate bit width for endianness swap
+        if (bitWidth != 8 && bitWidth != 16 && bitWidth != 32 && bitWidth != 64) {
+            model.notifyError("Endianness swap requires 8, 16, 32, or 64 bit width");
+            return;
+        }
+        
+        // Perform endianness swap using NumberUtils
+        BigInteger swappedValue = NumberUtils.convertEndianness(
+            currentValue,
+            bitWidth,
+            NumberUtils.Endianness.BIG_ENDIAN,
+            NumberUtils.Endianness.LITTLE_ENDIAN
+        );
+        
+        model.setCurrentValue(swappedValue);
+        model.setNewNumber(true);
+        
+        // Add to history
+        String operationString = String.format("Swap Endianness 0x%s -> 0x%s",
+            currentValue.toString(16).toUpperCase(),
+            swappedValue.toString(16).toUpperCase());
+        provider.addToHistory(swappedValue, operationString);
     }
     
     /**

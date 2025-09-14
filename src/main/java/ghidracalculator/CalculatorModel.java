@@ -17,6 +17,7 @@ public class CalculatorModel {
     private String currentOperation = "";
     private boolean newNumber = true;
     private String inputMode = "HEX"; // Default to hex
+    private int bitWidth = 32;
     
     // Validation constants
     private static final Set<String> VALID_INPUT_MODES = new HashSet<>();
@@ -146,6 +147,21 @@ public class CalculatorModel {
      */
     public String getInputMode() {
         return inputMode;
+    }
+
+    /** 
+     * Set bit width 
+     */
+    public void setBitWidth(int bitWidth) {
+        this.bitWidth = bitWidth;
+        fireStateChanged();
+    }
+
+    /** 
+     * Get current bit width 
+     */
+    public int getBitWidth() {
+        return bitWidth;
     }
     
     /**

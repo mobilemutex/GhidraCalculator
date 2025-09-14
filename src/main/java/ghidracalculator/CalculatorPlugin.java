@@ -10,6 +10,7 @@ import ghidracalculator.actions.AddAddressAction;
 import ghidracalculator.actions.AddDecompilerConstantAction;
 import ghidracalculator.actions.AddMemoryAction;
 import ghidracalculator.actions.CalculateDistanceAction;
+import ghidracalculator.actions.CalculateHashesFromSelectionAction;
 import ghidracalculator.actions.MarkAddressAction;
 import ghidracalculator.actions.MarkDecompilerConstantAction;
 import ghidracalculator.actions.MarkScalarAction;
@@ -47,6 +48,7 @@ public class CalculatorPlugin extends ProgramPlugin {
 	private DockingAction xorWithMarkedScalarAction;
 	private DockingAction addDecompilerConstant;
 	private DockingAction markDecompilerConstant;
+	private DockingAction calculateHashesFromSelection;
 
 	/**
 	 * Plugin constructor.
@@ -90,6 +92,7 @@ public class CalculatorPlugin extends ProgramPlugin {
 		xorWithMarkedScalarAction = new PerformMarkedScalarOperationAction(this, logic, "XOR with marked scalar operand", "xor", CALC_SCALAR);
 		addDecompilerConstant = new AddDecompilerConstantAction(this, logic);
 		markDecompilerConstant = new MarkDecompilerConstantAction(this, logic);
+		calculateHashesFromSelection = new CalculateHashesFromSelectionAction(this, GROUP_NAME);
 
 		tool.addAction(addAddressAction);
 		tool.addAction(addMemoryValueAction);
@@ -102,6 +105,7 @@ public class CalculatorPlugin extends ProgramPlugin {
 		tool.addAction(xorWithMarkedScalarAction);
 		tool.addAction(addDecompilerConstant);
 		tool.addAction(markDecompilerConstant);
+		tool.addAction(calculateHashesFromSelection);
 	}
 
 	/**
