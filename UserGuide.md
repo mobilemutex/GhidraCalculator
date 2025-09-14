@@ -36,7 +36,7 @@ The calculator features a comprehensive display system with multiple components:
    - HEX (Hexadecimal)
    - DEC (Decimal)
    - OCT (Octal)
-   - BIN (Binary)
+   - BIN (Binary) - Clickable for direct bit manipulation
 3. **Marked Value Display**: Shows any currently marked value
 4. **Marked Address Display**: Shows any currently marked address
 
@@ -75,12 +75,25 @@ Advanced bitwise operations are available:
 
 - **Flip Sign (+/-)**: Change the sign of the current value
 - **Clear (CLR)**: Reset the calculator to zero
+- **2's Complement**: Calculate the 2's complement of the current value
+- **Endian Swap**: Swap the byte order of the current value (big-endian to little-endian or vice versa)
 
 ### Quick Operations Panel
 
-The bottom panel provides quick increment/decrement operations:
+The bottom panel provides quick increment/decrement operations and is part of the collapsible extras panel:
 - +1, +0x10, +0x100, +0x1000
+- +2. +4, +8, +32
 - -1, -0x10, -0x100, -0x1000
+- -2, -4, -8, -32
+
+### Collapsible Extras Panel
+
+The calculator features a collapsible extras panel that can be toggled to show or hide additional functionality:
+
+1. **Increment Panel**: Contains the quick increment/decrement operations mentioned above
+2. **Hash Panel**: Provides hash calculation functionality for the current value
+
+The Hash Panel allows you to calculate various hash values (MD5, SHA-1, SHA-256) for a specified region of memory.
 
 ## Context Menu Integration
 
@@ -106,6 +119,12 @@ Right-clicking in the decompiler view provides these calculator options:
 
 1. **Add Constant to Calculator**: Adds a constant value to the calculator
 2. **Mark Constant**: Marks a constant value for comparison operations
+
+### Hash Calculations Context Menu
+
+Right-clicking on a selection in the Listing or Decompiler view provides hash calculation options:
+
+1. **Calculate Hashes from Selection**: Calculates various hash values (MD5, SHA-1, SHA-256) for the selected data
 
 ### Display Field Context Menu
 
@@ -195,6 +214,10 @@ The calculator window includes toolbar buttons for quick access:
 5. **Value Marking**: Mark values for complex multi-step calculations
 6. **Address Operations**: Use address marking and distance calculation for memory analysis
 7. **Clipboard Operations**: Copy and paste values between the calculator and other applications
+8. **Clickable Binary Display**: Click on individual bits in the binary display to toggle them for quick bit manipulation
+9. **Collapsible Extras Panel**: Use the collapsible extras panel to access increment operations and hash calculations
+10. **Hash Calculations**: Calculate hashes for the current value using the hash panel or context menu options
+11. **2's Complement and Endian Swapping**: Use the special functions to quickly perform 2's complement and endian swapping operations. The bitwidth for these operations is specified in the input field, and can be toggled between 8, 16, 32, and 64 by clicking the current bitwidth.
 
 ## Troubleshooting
 
