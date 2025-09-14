@@ -662,7 +662,7 @@ public class CalculatorUI extends JPanel implements CalculatorModel.CalculatorMo
 				HashUtils.HashAlgorithm[] algorithms = HashUtils.HashAlgorithm.values();
 				for (HashUtils.HashAlgorithm algorithm : algorithms) {
 					try {
-						HashUtils.HashResult hashResult = HashUtils.calculateMemoryHash(startAddress, length, algorithm);
+						HashUtils.HashResult hashResult = HashUtils.calculateMemoryHash(this.plugin.getCurrentProgram(), startAddress, length, algorithm);
 						result.append(algorithm.getAlgorithmName()).append(": ").append(hashResult.toHexString().toUpperCase()).append("\n");
 					} catch (Exception ex) {
 						result.append(algorithm.getAlgorithmName()).append(": ERROR - ").append(ex.getMessage()).append("\n");

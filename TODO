@@ -7,3 +7,8 @@ Feature Additions:
 - exporting/importing history windows
     - saving/loading sessions
 - batch operations on multiple selected values
+- Hash menu options
+    - hash string
+    - hash different formats
+    - compare hashes?
+    - hash chains

@@ -6,6 +6,7 @@ import docking.ActionContext;
 import docking.action.*;
 import ghidra.app.context.ListingActionContext;
 import ghidra.app.context.ListingContextAction;
+import ghidra.program.model.listing.Program;
 import ghidra.program.util.ProgramSelection;
 import ghidracalculator.CalculatorPlugin;
 import ghidracalculator.utils.HashUtils;
@@ -48,6 +49,8 @@ public class CalculateHashesFromSelectionAction extends ListingContextAction {
         BigInteger startAddress = selection.getMinAddress().getOffsetAsBigInteger();
         int length = (int) selection.getMaxAddress().subtract(selection.getMinAddress());
 
+        Program program = this.plugin.getCurrentProgram();
+
         // Calculate hashes for all supported algorithms
         StringBuilder result = new StringBuilder();
         result.append("\n=== Hash Calculations ===\n");
@@ -58,7 +61,7 @@ public class CalculateHashesFromSelectionAction extends ListingContextAction {
         HashUtils.HashAlgorithm[] algorithms = HashUtils.HashAlgorithm.values();
         for (HashUtils.HashAlgorithm algorithm : algorithms) {
             try {
-                HashUtils.HashResult hashResult = HashUtils.calculateMemoryHash(startAddress, length, algorithm);
+                HashUtils.HashResult hashResult = HashUtils.calculateMemoryHash(program, startAddress, length, algorithm);
                 result.append(algorithm.getAlgorithmName()).append(": ").append(hashResult.toHexString().toUpperCase()).append("\n");
             } catch (Exception ex) {
                 result.append(algorithm.getAlgorithmName()).append(": ERROR - ").append(ex.getMessage()).append("\n");
